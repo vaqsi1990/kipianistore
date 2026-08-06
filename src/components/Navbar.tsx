@@ -6,6 +6,7 @@ import Menu from "./Menu";
 import Image from "next/image";
 import SearchBar from "./SearchBar";
 import NavIcons from "./NavIcons";
+import StoreSelector from "./StoreSelector";
 import { useTranslations } from "next-intl";
 
 function Navbar() {
@@ -53,7 +54,8 @@ function Navbar() {
           </div>
         </div>
 
-        <div className="w-2/3 flex justify-end gap-8">
+        <div className="w-2/3 flex justify-end items-center gap-4 xl:gap-8">
+          <StoreSelector />
           <SearchBar />
           <NavIcons />
         </div>

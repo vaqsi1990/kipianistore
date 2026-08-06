@@ -5,6 +5,9 @@ import { prisma } from "../prisma";
 import { ProductSchema, updateProductSchema } from "../validators";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "../auth-helpers";
+import { cookies } from "next/headers";
+import { syncProductStores } from "./store.actions";
+import { getProductStoreSlugs } from "../store-utils";
 
 export async function convertToPlainObject<T>(value: T): Promise<T> {
   return JSON.parse(JSON.stringify(value));
@@ -15,15 +18,19 @@ export async function getSingleProduct(id: string) {
     where: { id: id },
     include: {
       sizes: true,
+      stores: {
+        include: { store: true },
+      },
     },
   });
 
   if (!product) return null;
 
-  // Convert Decimal objects to numbers
   return {
     ...product,
     price: product.price ? Number(product.price) : undefined,
+    storeIds: product.stores.map((entry) => entry.storeId),
+    storeSlugs: getProductStoreSlugs(product),
     sizes: product.sizes?.map(size => ({
       ...size,
       price: Number(size.price)
@@ -61,12 +68,14 @@ export async function createProduct(data: z.infer<typeof ProductSchema>) {
 
     const normalizedCategory =
       product.category === "bundle" ? "bundle" : product.category;
-    const { sizes, ...productData } = product;
+    const { sizes, storeIds, storeStock, ...productData } = product;
 
     const createData: any = {
       ...productData,
       category: normalizedCategory as any,
     };
+    delete createData.storeIds;
+    delete createData.storeStock;
 
     // Handle price for OTHERS category or sizes for other categories
     if (product.category === "OTHERS") {
@@ -86,6 +95,15 @@ export async function createProduct(data: z.infer<typeof ProductSchema>) {
         sizes: true,
       },
     });
+
+    const stockEntries =
+      storeStock?.length
+        ? storeStock
+        : storeIds?.map((storeId) => ({ storeId, stock: 1 })) ?? [];
+
+    if (stockEntries.length) {
+      await syncProductStores(createdProduct.id, stockEntries);
+    }
 
     revalidatePath("/admin");
 
@@ -146,11 +164,6 @@ export async function updateProduct(data: z.infer<typeof updateProductSchema>) {
       category: normalizedCategory,
       sales: product.sales,
       popular: product.popular,
-      tbilisi: product.tbilisi,
-      batumi: product.batumi,
-      batumi44: product.batumi44,
-      qutaisi: product.qutaisi,
-      kobuleti: product.kobuleti,
     };
 
     // Handle price for OTHERS category or sizes for other categories
@@ -175,6 +188,15 @@ export async function updateProduct(data: z.infer<typeof updateProductSchema>) {
       data: updateData,
     });
 
+    if (product.storeStock?.length) {
+      await syncProductStores(product.id, product.storeStock);
+    } else if (product.storeIds) {
+      await syncProductStores(
+        product.id,
+        product.storeIds.map((storeId) => ({ storeId, stock: 1 }))
+      );
+    }
+
     revalidatePath("/admin/products");
 
     return {
@@ -189,8 +211,30 @@ export async function updateProduct(data: z.infer<typeof updateProductSchema>) {
 
 export async function getAllProducts(page = 1, pageSize = 20, getAll = false, filters?: any) {
   try {
-          // Build where clause based on filters
+      const cookieStore = await cookies();
+      const selectedStore =
+        filters?.storeSlug ||
+        cookieStore.get("selectedStore")?.value;
+
       const where: any = {};
+
+      if (selectedStore && selectedStore !== "all") {
+        where.stores = {
+          some: {
+            store: {
+              slug: selectedStore,
+              isActive: true,
+            },
+            stock: { gt: 0 },
+          },
+        };
+      } else if (filters?.inStock === true) {
+        where.stores = {
+          some: {
+            stock: { gt: 0 },
+          },
+        };
+      }
       
       if (filters?.category) {
         where.category = filters.category.toUpperCase();
@@ -236,6 +280,20 @@ export async function getAllProducts(page = 1, pageSize = 20, getAll = false, fi
                 price: true,
               },
             },
+            stores: {
+              include: {
+                store: {
+                  select: {
+                    id: true,
+                    slug: true,
+                    nameKa: true,
+                    nameEn: true,
+                    address: true,
+                    city: true,
+                  },
+                },
+              },
+            },
           },
           orderBy: { createdAt: "desc" },
         }),
@@ -254,6 +312,7 @@ export async function getAllProducts(page = 1, pageSize = 20, getAll = false, fi
         ...product,
         price: product.price ? Number(product.price) : undefined,
         minSizePrice: minSizePrice !== Infinity ? minSizePrice : undefined,
+        storeSlugs: getProductStoreSlugs(product),
         sizes: product.sizes?.map(size => ({
           ...size,
           price: Number(size.price)
@@ -273,15 +332,35 @@ export async function getProductById(productId: string) {
     where: { id: productId },
     include: {
       sizes: true,
+      stores: {
+        include: {
+          store: true,
+        },
+      },
     },
   });
 
   if (!data) return null;
 
-  // Convert Decimal objects to numbers
   return {
     ...data,
     price: data.price ? Number(data.price) : undefined,
+    storeIds: data.stores.map((entry) => entry.storeId),
+    storeStock: data.stores.map((entry) => ({
+      storeId: entry.storeId,
+      stock: entry.stock,
+    })),
+    storeAvailability: data.stores.map((entry) => ({
+      storeId: entry.storeId,
+      slug: entry.store.slug,
+      nameKa: entry.store.nameKa,
+      nameEn: entry.store.nameEn,
+      address: entry.store.address,
+      city: entry.store.city,
+      stock: entry.stock,
+      inStock: entry.stock > 0,
+    })),
+    storeSlugs: getProductStoreSlugs(data),
     sizes: data.sizes?.map(size => ({
       ...size,
       price: Number(size.price)

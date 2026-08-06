@@ -3,7 +3,9 @@ import { auth } from '../../../../../auth';
 import { prisma } from '@/lib/prisma';
 import { sendOrderReceipt } from '@/lib/email';
 import { sendOrderToAdmin } from '@/lib/email';
-import { getCartForUser } from '@/lib/cart-helpers';
+import { getCartForUser, validateDeliveryForCart } from '@/lib/cart-helpers';
+import { CartItem } from '@/lib/types';
+import { decrementOrderStock } from '@/lib/stock-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,21 +30,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
     }
 
-    // Calculate delivery price based on delivery location
-    const freeLocations = [
-      'Tbilisi( T. Eristavi 1)',
-      'Batumi( A. Pushkin 115/117)',
-      'Batumi( A. Pushkin 44)',
-      'Kutaisi( Z. Purtzeladze 15)',
-      'Kobuleti( Sh. Rustaveli 151)'
-    ];
-    let shippingPrice = 0;
-    if (freeLocations.includes(deliveryOption)) {
-      shippingPrice = 0;
-    } else {
-      // fallback for any other location, if needed
-      shippingPrice = 0;
+    const cartItems = cart.items as CartItem[];
+    const deliveryCheck = await validateDeliveryForCart(cartItems, deliveryOption);
+    if (!deliveryCheck.valid) {
+      return NextResponse.json(
+        {
+          error: deliveryCheck.stockError
+            ? 'Insufficient stock at the selected store'
+            : deliveryCheck.availableSlugs.length === 0
+              ? 'Cart items are not available at a common pickup location'
+              : 'Invalid delivery location for this cart',
+        },
+        { status: 400 }
+      );
     }
+
+    const shippingPrice = 0;
     
     // Create order items from cart items
     const orderItems = cart.items.map((item: any) => ({
@@ -73,6 +76,10 @@ export async function POST(request: NextRequest) {
         user: true
       }
     });
+
+    if (deliveryOption) {
+      await decrementOrderStock(order.id, deliveryOption);
+    }
 
     // Send order receipt email
     try {

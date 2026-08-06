@@ -5,6 +5,11 @@ import { convertToPlainObject } from "../utils";
 import { CartItem } from "../types";
 import { Prisma } from "@prisma/client";
 import { getCartForUser } from "../cart-helpers";
+import {
+  getProductStoreSlugs,
+  legacyFlagsFromSlugs,
+} from "../store-utils";
+import { enrichCartItem } from "../cart-helpers";
 
 export async function getMyCart() {
     const sessionCartId = (await cookies()).get('sessionCartId')?.value;
@@ -30,22 +35,7 @@ export async function getMyCart() {
     const cartItems = cart.items as CartItem[];
     
     const itemsWithLocations = await Promise.all(
-      cartItems.map(async (item) => {
-        // Fetch product location information
-        const product = await prisma.product.findFirst({
-          where: { id: item.productId },
-          select: { tbilisi: true, batumi: true, batumi44: true, qutaisi: true, kobuleti: true }
-        });
-
-        return {
-          ...item,
-          tbilisi: product?.tbilisi ?? false,
-          batumi: product?.batumi ?? false,
-          batumi44: product?.batumi44 ?? false,
-          qutaisi: product?.qutaisi ?? false,
-          kobuleti: product?.kobuleti ?? false,
-        };
-      })
+      cartItems.map((item) => enrichCartItem(item))
     );
   
     // Convert decimals and return
@@ -72,7 +62,14 @@ export async function addToCart(productId: string, size: string, quantity: numbe
     // Get product details
     const product = await prisma.product.findFirst({
       where: { id: productId },
-      include: { sizes: true }
+      include: {
+        sizes: true,
+        stores: {
+          include: {
+            store: { select: { slug: true } },
+          },
+        },
+      },
     });
 
     if (!product) throw new Error('Product not found');
@@ -118,6 +115,8 @@ export async function addToCart(productId: string, size: string, quantity: numbe
       updatedItems[existingItemIndex].qty += quantity;
     } else {
       // Add new item
+      const storeSlugs = getProductStoreSlugs(product);
+      const flags = legacyFlagsFromSlugs(storeSlugs);
       const newItem: CartItem = {
         productId,
         name: product.title,
@@ -125,11 +124,8 @@ export async function addToCart(productId: string, size: string, quantity: numbe
         qty: quantity,
         image: product.images[0],
         price: finalPrice.toFixed(2),
-        tbilisi: product.tbilisi || false,
-        batumi: product.batumi || false,
-        batumi44: product.batumi44 || false,
-        qutaisi: product.qutaisi || false,
-        kobuleti: product.kobuleti || false,
+        storeSlugs,
+        ...flags,
       };
       updatedItems = [...existingItems, newItem];
     }
@@ -184,22 +180,7 @@ export async function removeFromCart(productId: string, size: string) {
 
     // Ensure remaining items have location information
     const updatedItems = await Promise.all(
-      filteredItems.map(async (item) => {
-        // Fetch product location information
-        const product = await prisma.product.findFirst({
-          where: { id: item.productId },
-          select: { tbilisi: true, batumi: true, batumi44: true, qutaisi: true, kobuleti: true }
-        });
-
-        return {
-          ...item,
-          tbilisi: product?.tbilisi || false,
-          batumi: product?.batumi || false,
-          batumi44: product?.batumi44 || false,
-          qutaisi: product?.qutaisi || false,
-          kobuleti: product?.kobuleti || false,
-        };
-      })
+      filteredItems.map((item) => enrichCartItem(item))
     );
 
     const { itemsPrice, totalPrice, shippingPrice, taxPrice } = calculateCartTotals(updatedItems);
@@ -247,23 +228,9 @@ export async function updateCartItemQuantity(productId: string, size: string, qu
     const updatedItems = await Promise.all(
       existingItems.map(async (item) => {
         if (item.productId === productId && item.size === size) {
-          // Fetch product location information for updated item
-          const product = await prisma.product.findFirst({
-            where: { id: item.productId },
-            select: { tbilisi: true, batumi: true, batumi44: true, qutaisi: true, kobuleti: true }
-          });
-
-          return { 
-            ...item, 
-            qty: quantity,
-            tbilisi: product?.tbilisi || false,
-            batumi: product?.batumi || false,
-            batumi44: product?.batumi44 || false,
-            qutaisi: product?.qutaisi || false,
-            kobuleti: product?.kobuleti || false,
-          };
+          return enrichCartItem({ ...item, qty: quantity });
         }
-        return item;
+        return enrichCartItem(item);
       })
     );
 

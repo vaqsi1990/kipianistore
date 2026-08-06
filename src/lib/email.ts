@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { resolveDeliveryLocationLabel } from '@/lib/cart-helpers';
 
 // Create a transporter using SMTP with improved configuration
 const transporter = nodemailer.createTransport({
@@ -165,25 +166,13 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
   }
 };
 
-const getDeliveryLocationText = (deliveryLocation: string) => {
-  switch (deliveryLocation) {
-    case 'tbilisi':
-      return 'Tbilisi( T. Eristavi 1)';
-    case 'batumi':
-      return 'Batumi( A. Pushkin 115/117)';
-    case 'batumi44':
-      return 'Batumi( A. Pushkin 44)';
-    case 'qutaisi':
-      return 'Kutaisi( I. Chavchavadze 51)';
-    case 'kobuleti':
-      return 'Kobuleti( Sh. Rustaveli 151)';
-    default:
-      return deliveryLocation || 'Not specified';
-  }
+const getDeliveryLocationText = async (deliveryLocation: string) => {
+  return resolveDeliveryLocationLabel(deliveryLocation, 'en');
 };
 
 export const sendOrderReceipt = async (email: string, order: any, customerName: string) => {
   const formatPrice = (price: number) => `₾${price.toFixed(2)}`;
+  const deliveryLocationText = await getDeliveryLocationText(order.deliveryLocation);
   
   const orderItemsHtml = order.orderitems.map((item: any) => `
     <tr>
@@ -282,7 +271,7 @@ export const sendOrderReceipt = async (email: string, order: any, customerName: 
           <div style="background-color: #f8f9fa; border-radius: 6px; padding: 20px; margin-bottom: 30px;">
             <h3 style="color: #333; margin: 0 0 15px 0;">Delivery Information</h3>
             <p style="color: #666; margin: 0; line-height: 1.6;">
-              ${getDeliveryLocationText(order.deliveryLocation)}
+              ${deliveryLocationText}
             </p>
           </div>
           
@@ -429,15 +418,10 @@ export const sendOrderToAdmin = async (order: any) => {
 
   const shipping = order.shippingAddress;
   const user = order.user;
-
-  // Map deliveryLocation codes to full Georgian addresses
-  const deliveryLocationMap: Record<string, string> = {
-    'tbilisi': 'თბილისი, თ. ერისთავის 1',
-    'batumi': 'ბათუმი, ალ. პუშკინის 115/117',
-    'batumi44': 'ბათუმი, ალ. პუშკინის 44',
-    'qutaisi': 'ქუთაისი, ი. ჭავჭავაძის 51',
-    'kobuleti': 'ქობულეთი, შ. რუსთაველის 151',
-  };
+  const deliveryLocationText = await resolveDeliveryLocationLabel(
+    order.deliveryLocation,
+    'ka'
+  );
 
   const mailOptions = {
     from: {
@@ -493,7 +477,7 @@ export const sendOrderToAdmin = async (order: any) => {
             <li><strong>Tax:</strong> ${formatPrice(parseFloat(order.taxPrice.toString()))}</li>
             <li><strong>Total:</strong> ${formatPrice(parseFloat(order.totalPrice.toString()))}</li>
             <li><strong>Payment Method:</strong> ${order.paymentMethod}</li>
-            <li><strong>Delivery Option:</strong> ${deliveryLocationMap[order.deliveryLocation] || order.deliveryLocation}</li>
+            <li><strong>Delivery Option:</strong> ${deliveryLocationText}</li>
           </ul>
         </div>
       </div>

@@ -7,6 +7,7 @@ import {
   mapBogStatusToPaymentStatus,
 } from "@/lib/bog-utils";
 import { sendOrderReceipt, sendOrderToAdmin } from "@/lib/email";
+import { decrementOrderStock } from "@/lib/stock-utils";
 
 const PUBLIC_KEY = (
   process.env.BOG_PUBLIC_KEY ||
@@ -144,6 +145,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (isPaid) {
+      if (order.deliveryLocation) {
+        await decrementOrderStock(order.id, order.deliveryLocation);
+      }
+
       await prisma.cart.updateMany({
         where: { userId: order.userId },
         data: {

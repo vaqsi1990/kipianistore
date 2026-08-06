@@ -19,6 +19,17 @@ interface ProductSize {
   price: number;
 }
 
+interface StoreAvailability {
+  storeId: string;
+  slug: string;
+  nameKa: string;
+  nameEn: string;
+  address: string;
+  city: string;
+  stock: number;
+  inStock: boolean;
+}
+
 interface Product {
   id: string;
   title: string;
@@ -36,8 +47,9 @@ interface Product {
   qutaisi: boolean;
   kobuleti: boolean;
   sizes?: ProductSize[];
-  price?: number; // For OTHERS category products
+  price?: number;
   sales?: number;
+  storeAvailability?: StoreAvailability[];
 }
 
 const Page = (props: { params: { id: string; locale: string } }) => {
@@ -48,7 +60,13 @@ const Page = (props: { params: { id: string; locale: string } }) => {
   const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [selectedStore, setSelectedStore] = useState("all");
   const { data: session } = useSession();
+
+  useEffect(() => {
+    const match = document.cookie.match(/(?:^|; )selectedStore=([^;]*)/);
+    setSelectedStore(match ? decodeURIComponent(match[1]) : "all");
+  }, []);
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -60,6 +78,7 @@ const Page = (props: { params: { id: string; locale: string } }) => {
             sizes: data.sizes || [],
             price: data.price || undefined,
             sales: data.sales || undefined,
+            storeAvailability: (data as any).storeAvailability ?? [],
           };
           setProduct(productWithPrices as Product);
           // Set the first size as default selected for products with sizes
@@ -137,8 +156,34 @@ const Page = (props: { params: { id: string; locale: string } }) => {
     }
   };
 
+  const availability = product?.storeAvailability ?? [];
+
+  const getStoreDisplayName = (store: StoreAvailability) =>
+    locale === "en" ? store.nameEn : store.nameKa;
+
+  const selectedStoreInfo =
+    selectedStore !== "all"
+      ? availability.find((store) => store.slug === selectedStore)
+      : null;
+
+  const canBuyAtSelectedStore =
+    selectedStore === "all"
+      ? availability.some((store) => store.inStock)
+      : Boolean(selectedStoreInfo?.inStock);
+
+  const hasAnyAvailableStock = availability.some((store) => store.inStock);
+
   const handleAddToCart = async () => {
     if (!product) return;
+
+    if (!canBuyAtSelectedStore) {
+      toast.error(
+        locale === "en"
+          ? "This product is not available at the selected store"
+          : "ამ ფილიალში პროდუქტი არ არის მარაგში"
+      );
+      return;
+    }
 
     // For OTHERS products, no size selection needed
     if (isOthersProduct()) {
@@ -317,122 +362,65 @@ const Page = (props: { params: { id: string; locale: string } }) => {
                   {getTranslation("product.availability", "Availability")}
                 </h3>
                 <div className="space-y-1">
-                  {product?.tbilisi && (
-                    <div className="flex items-center justify-between p-2 bg-white rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-[#bbb272] rounded-full"></div>
-                        <span className="text-[18px] md:text-[20px] font-medium text-black">
-                          {getTranslation("locations.tbilisi", "Tbilisi")}
-                        </span>
-                      </div>
-                      <span className=" text-[18px] md:text-[20px] text-black">
-                        {getTranslation(
-                          "locations.tbilisiAddress",
-                          "Tbilisi, T. Eristavi 1"
-                        )}
-                      </span>
-                    </div>
-                  )}
-
-                  {product?.batumi && (
-                    <div className="flex items-center justify-between p-2 bg-white rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-[#bbb272] rounded-full"></div>
-                        <span className="text-[16px] md:text-[20px] sm:text-base font-medium text-black">
-                          {getTranslation("locations.batumi", "Batumi")}
-                        </span>
-                      </div>
-                      <span className="text-[16px] md:text-[20px] text-black">
-                        {getTranslation(
-                          "locations.batumiAddress",
-                          " A. Pushkin 117"
-                        )}
-                      </span>
-
-                    </div>
-                  )}
-                  {product?.batumi44 && (
-                    <div className="flex items-center justify-between p-2 bg-white rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-[#bbb272] rounded-full"></div>
-                        <span className="text-[16px] md:text-[20px] sm:text-base font-medium text-black">
-                          {getTranslation("locations.batumi", "Batumi")}
-                        </span>
-                      </div>
-                      <span className="text-[16px] md:text-[20px] text-black">
-                        {getTranslation(
-                          "locations.batumiAddress2",
-                          " A. Pushkin 44"
-                        )}
-                      </span>
-
-                    </div>
-                  )}
-
-                  {product?.qutaisi && (
-                    <div className="flex items-center justify-between p-2 bg-white rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-[#bbb272] rounded-full"></div>
-                        <span className="text-[16px] md:text-[20px] font-medium text-black">
-                          {getTranslation("locations.qutaisi", "Kutaisi")}
-                        </span>
-                      </div>
-                      <span className="text-[16px] md:text-[20px] text-black">
-                        {getTranslation(
-                          "locations.qutaisiAddress",
-                          "Kutaisi, Z. Purtzeladze 15"
-                        )}
-                      </span>
-                    </div>
-                  )}
-
-                  {product?.kobuleti && (
-                    <div className="flex items-center justify-between p-2 bg-white rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-[#bbb272] rounded-full"></div>
-                        <span className="text-[16px] md:text-[20px] font-medium text-black">
-                          {getTranslation("locations.kobuleti", "Kobuleti")}
-                        </span>
-                      </div>
-                      <span className="text-[16px] md:text-[20px] text-black">
-                        {getTranslation(
-                          "locations.kobuletiAddress",
-                          "Kobuleti, Central Street 15"
-                        )}
-                      </span>
-                    </div>
-                  )}
-                 
-
-                  {!product?.tbilisi &&
-                    !product?.batumi &&
-                    !product?.qutaisi &&
-                    !product?.kobuleti && (
-                      <div className="flex items-center justify-center p-2 bg-red-50 rounded-lg border border-red-200">
+                  {availability.length > 0 ? (
+                    availability.map((store) => (
+                      <div
+                        key={store.slug}
+                        className={`flex items-center justify-between p-2 rounded-lg border ${
+                          store.inStock
+                            ? "bg-white border-gray-200"
+                            : "bg-red-50 border-red-200"
+                        }`}
+                      >
                         <div className="flex items-center space-x-2">
-                          <svg
-                            className="w-4 h-4 text-red-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                          <div
+                            className={`w-2 h-2 rounded-full ${
+                              store.inStock ? "bg-[#bbb272]" : "bg-red-500"
+                            }`}
+                          />
+                          <span className="text-[16px] md:text-[20px] font-medium text-black">
+                            {getStoreDisplayName(store)}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="block text-[14px] md:text-[18px] text-black">
+                            {store.address}
+                          </span>
+                          <span
+                            className={`block text-sm font-medium ${
+                              store.inStock ? "text-green-700" : "text-red-600"
+                            }`}
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                            />
-                          </svg>
-                          <span className="text-[18px] sm:text-base text-red-700 font-medium">
-                            {getTranslation(
-                              "product.outOfStock",
-                              "Out of stock at all locations"
-                            )}
+                            {store.inStock
+                              ? locale === "en"
+                                ? `In stock (${store.stock})`
+                                : `მარაგში (${store.stock})`
+                              : locale === "en"
+                                ? "Sold out"
+                                : "გაყიდულია"}
                           </span>
                         </div>
                       </div>
-                    )}
+                    ))
+                  ) : (
+                    <div className="flex items-center justify-center p-2 bg-red-50 rounded-lg border border-red-200">
+                      <span className="text-[18px] sm:text-base text-red-700 font-medium">
+                        {getTranslation(
+                          "product.outOfStock",
+                          "Out of stock at all locations"
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
+
+                {selectedStore !== "all" && selectedStoreInfo && !selectedStoreInfo.inStock && hasAnyAvailableStock && (
+                  <p className="mt-2 text-sm text-yellow-200">
+                    {locale === "en"
+                      ? "Sold out at your selected city, but available in other stores. Change city from the menu above."
+                      : "არჩეულ ქალაქში გაყიდულია, მაგრამ სხვა ფილიალში ხელმისაწვდომია. შეცვალეთ ქალაქი მენიუდან."}
+                  </p>
+                )}
               </div>
 
               {/* Add to Cart Button */}
@@ -441,17 +429,26 @@ const Page = (props: { params: { id: string; locale: string } }) => {
                   <button
                     onClick={handleAddToCart}
                     disabled={
-                      (!isOthersProduct() && !selectedSize) || addingToCart
+                      (!isOthersProduct() && !selectedSize) ||
+                      addingToCart ||
+                      !canBuyAtSelectedStore
                     }
-                    className={`w-full md:w-[50%] px-4 py-2 text-[20px] md:text-[20px] font-bold text-white bg-[#bbb272] rounded-lg  transition-colors ${(isOthersProduct() || selectedSize) && !addingToCart
+                    className={`w-full md:w-[50%] px-4 py-2 text-[20px] md:text-[20px] font-bold text-white bg-[#bbb272] rounded-lg  transition-colors ${
+                      (isOthersProduct() || selectedSize) &&
+                      !addingToCart &&
+                      canBuyAtSelectedStore
                         ? "bg-[#bbb272] text-white"
                         : "bg-gray-400 cursor-not-allowed"
-                      }`}
+                    }`}
                   >
                     <span>
                       {addingToCart
                         ? "დამატება..."
-                        : getTranslation("product.addToCart", "Add to Cart")}
+                        : !canBuyAtSelectedStore
+                          ? locale === "en"
+                            ? "Not available here"
+                            : "ამ ფილიალში არ არის"
+                          : getTranslation("product.addToCart", "Add to Cart")}
                     </span>
                   </button>
                 </div>

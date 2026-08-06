@@ -20,7 +20,8 @@ import {
   FaCheckCircle,
   FaClock,
   FaUsers,
-  FaCreditCard
+  FaCreditCard,
+  FaMapMarkerAlt
 } from "react-icons/fa";
 import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/prisma";
@@ -158,6 +159,12 @@ export default async function AdminAllPage() {
             <p className="text-gray-600">მართეთ თქვენი პროდუქტები, შეკვეთები და მომხმარებლები</p>
           </div>
           <div className="flex gap-4">
+            <Link href="/adminall/stores">
+              <Button className="w-full px-4 mb-10 py-2 text-[20px] font-bold text-white bg-[#869dab] rounded-lg hover:bg-[#3a7a5f] transition-colors" variant="default">
+                <FaMapMarkerAlt className="mr-2" />
+                ფილიალები
+              </Button>
+            </Link>
             <Link href="/new">
               <Button className="w-full px-4 mb-10 py-2 text-[20px] font-bold text-white bg-[#869dab] rounded-lg hover:bg-[#3a7a5f] transition-colors" variant="default">
                 <FaPlus className="mr-2" />

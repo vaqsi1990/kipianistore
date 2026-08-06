@@ -18,6 +18,7 @@ import { useState, useEffect } from "react";
 import { updateProductSchema } from "@/lib/validators";
 import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
+import StoreLocationsPicker from "@/components/StoreLocationsPicker";
 
 type EditProductFormValues = z.infer<typeof updateProductSchema>;
 
@@ -43,11 +44,8 @@ export default function EditProductForm({ productId }: EditProductFormProps) {
       descriptionEn: "",
       price: undefined,
       sizes: [{ size: "SIZE_80_190", price: 0 }],
-      tbilisi: false,
-      batumi: false,
-      batumi44: false,
-      qutaisi: false,
-      kobuleti: false,
+      storeIds: [] as string[],
+      storeStock: [] as { storeId: string; stock: number }[],
       popular: false,
       sales: 0,
     },
@@ -97,11 +95,8 @@ export default function EditProductForm({ productId }: EditProductFormProps) {
               size: size.size,
               price: Number(size.price)
             })) || [{ size: "SIZE_80_190", price: 0 }],
-            tbilisi: product.tbilisi || false,
-            batumi: product.batumi || false,
-            batumi44: product.batumi44 || false,
-            qutaisi: product.qutaisi || false,
-            kobuleti: product.kobuleti || false,
+            storeIds: product.storeIds ?? [],
+            storeStock: product.storeStock ?? [],
             popular: product.popular || false,
             sales: product.sales || 0,
           });
@@ -416,102 +411,22 @@ export default function EditProductForm({ productId }: EditProductFormProps) {
               </div>
             )}
 
-            {/* Location checkboxes */}
-            <div className="space-y-4">
-              <FormLabel className="text-base font-medium">Location</FormLabel>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <FormField
-                  control={form.control}
-                  name="tbilisi"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <label className="flex items-center gap-2">
-                          <input 
-                            type="checkbox" 
-                            checked={field.value} 
-                            onChange={e => field.onChange(e.target.checked)} 
-                          />
-                          Tbilisi
-                        </label>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="batumi"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <label className="flex items-center gap-2">
-                          <input 
-                            type="checkbox" 
-                            checked={field.value} 
-                            onChange={e => field.onChange(e.target.checked)} 
-                          />
-                          Batumi
-                        </label>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="batumi44"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <label className="flex items-center gap-2">
-                          <input type="checkbox" checked={field.value} onChange={e => field.onChange(e.target.checked)} />
-                          ბათუმი (44)
-                        </label>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="qutaisi"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <label className="flex items-center gap-2">
-                          <input 
-                            type="checkbox" 
-                            checked={field.value} 
-                            onChange={e => field.onChange(e.target.checked)} 
-                          />
-                          Qutaisi
-                        </label>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="kobuleti"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <label className="flex items-center gap-2">
-                          <input 
-                            type="checkbox" 
-                            checked={field.value} 
-                            onChange={e => field.onChange(e.target.checked)} 
-                          />
-                          Kobuleti
-                        </label>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name="storeStock"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Store locations & stock</FormLabel>
+                  <FormControl>
+                    <StoreLocationsPicker
+                      value={field.value ?? []}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* sales */}
             <FormField

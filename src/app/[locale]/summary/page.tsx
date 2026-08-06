@@ -12,6 +12,8 @@ import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCart } from '@/lib/context/CartContext';
 import Image from 'next/image';
+import { getActiveStores } from '@/lib/actions/store.actions';
+import { getAvailableStoreSlugsFromCart, getStoreLabel } from '@/lib/store-utils';
 
 interface Cart {
   id: string;
@@ -47,6 +49,14 @@ const SummaryPage = () => {
   const [processing, setProcessing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [pendingPayment, setPendingPayment] = useState<any>(null);
+  const [stores, setStores] = useState<Array<{
+    id: string;
+    slug: string;
+    nameKa: string;
+    nameEn: string;
+    address: string;
+    city: string;
+  }>>([]);
 
   // Load address data from sessionStorage
   useEffect(() => {
@@ -83,6 +93,10 @@ const SummaryPage = () => {
         console.error('Error parsing pending payment:', error);
       }
     }
+  }, []);
+
+  useEffect(() => {
+    getActiveStores().then(setStores);
   }, []);
 
   const calculateDeliveryPrice = (location: string) => {
@@ -164,52 +178,30 @@ const SummaryPage = () => {
     return size.replace('SIZE_', '').replace('_', 'x');
   };
 
-  // Get available delivery locations based on cart items
   const availableLocations = useMemo(() => {
     if (!cart?.items) return [];
-
-    const locations = {
-      tbilisi: false,
-      batumi: false,
-      batumi44: false,
-      qutaisi: false,
-      kobuleti: false,
-    };
-
-    cart.items.forEach(item => {
-      if (item.tbilisi) locations.tbilisi = true;
-      if (item.batumi) locations.batumi = true;
-      if (item.batumi44) locations.batumi44 = true;
-      if (item.qutaisi) locations.qutaisi = true;
-      if (item.kobuleti) locations.kobuleti = true;
-    });
-
-    return Object.entries(locations)
-      .filter(([_, available]) => available)
-      .map(([location, _]) => location);
+    return getAvailableStoreSlugsFromCart(cart.items);
   }, [cart?.items]);
+
+  const deliveryStores = useMemo(() => {
+    return stores.filter((store) => availableLocations.includes(store.slug));
+  }, [stores, availableLocations]);
 
   // Auto-select delivery option based on user's city
   useEffect(() => {
-    if (address && availableLocations.length > 0 && !deliveryOption) {
+    if (address && deliveryStores.length > 0 && !deliveryOption) {
       const userCity = address.city.toLowerCase();
 
-      // Check if user's city matches any available location
-      if (userCity.includes('tbilisi') && availableLocations.includes('tbilisi')) {
-        setDeliveryOption('tbilisi');
-      } else if (userCity.includes('batumi') && availableLocations.includes('batumi')) {
-        setDeliveryOption('batumi');
-      }
-      else if (userCity.includes('qutaisi') && availableLocations.includes('qutaisi')) {
-        setDeliveryOption('qutaisi');
-      } else if (userCity.includes('kobuleti') && availableLocations.includes('kobuleti')) {
-        setDeliveryOption('kobuleti');
-      } else {
-        // If no match, select the first available location
-        setDeliveryOption(availableLocations[0]);
-      }
+      const cityMatch = deliveryStores.find((store) =>
+        userCity.includes(store.slug) ||
+        userCity.includes(store.city.toLowerCase()) ||
+        userCity.includes(store.nameKa.toLowerCase()) ||
+        userCity.includes(store.nameEn.toLowerCase())
+      );
+
+      setDeliveryOption(cityMatch?.slug ?? deliveryStores[0].slug);
     }
-  }, [address, availableLocations, deliveryOption]);
+  }, [address, deliveryStores, deliveryOption]);
 
   if (loading) {
     return (
@@ -274,7 +266,12 @@ const SummaryPage = () => {
       const orderDataResponse = await orderRes.json();
 
       if (!orderRes.ok) {
-        toast.error(orderDataResponse.error || 'შეკვეთის შექმნა ვერ მოხერხდა');
+        toast.error(
+          orderDataResponse.error ||
+            (locale === 'en'
+              ? 'Order creation failed'
+              : 'შეკვეთის შექმნა ვერ მოხერხდა')
+        );
         return;
       }
 
@@ -357,112 +354,50 @@ const SummaryPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {availableLocations.length > 0 ? (
+                {deliveryStores.length > 0 ? (
                   <div className="space-y-3">
                     <p className="text-sm text-gray-600 mb-3">
                       {t('checkout.deliveryPricingNote')}
                     </p>
-                    {availableLocations.includes('tbilisi') && (
-                      <label className="flex items-center space-x-3 cursor-pointer">
+                    {deliveryStores.map((store) => (
+                      <label
+                        key={store.id}
+                        className="flex items-center space-x-3 cursor-pointer"
+                      >
                         <input
                           type="radio"
                           name="delivery"
-                          value="tbilisi"
-                          checked={deliveryOption === 'tbilisi'}
+                          value={store.slug}
+                          checked={deliveryOption === store.slug}
                           onChange={(e) => setDeliveryOption(e.target.value)}
                           className="text-[#438c71]"
                         />
                         <div>
-                          <span className="font-medium">{t('productDetail.locations.tbilisi')}</span>
-                          <span className="text-gray-600 ml-2">({t('productDetail.locations.tbilisiAddress')})</span>
+                          <span className="font-medium">
+                            {getStoreLabel(store, locale)}
+                          </span>
+                          <span className="text-gray-600 ml-2">({store.address})</span>
                           <span className="text-[#438c71] font-semibold ml-2">
                             - {t('checkout.free')}
                           </span>
                         </div>
                       </label>
-                    )}
-                    {availableLocations.includes('batumi') && (
-                      <label className="flex items-center space-x-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="delivery"
-                          value="batumi"
-                          checked={deliveryOption === 'batumi'}
-                          onChange={(e) => setDeliveryOption(e.target.value)}
-                          className="text-[#438c71]"
-                        />
-                        <div>
-                          <span className="font-medium">{t('productDetail.locations.batumi')}</span>
-                          <span className="text-gray-600 ml-2">({t('productDetail.locations.batumiAddress')})</span>
-
-                          <span className="text-[#438c71] font-semibold ml-2">
-                            - {t('checkout.free')}
-                          </span>
-                        </div>
-                      </label>
-                    )}
-
-                    {availableLocations.includes('batumi44') && (
-                      <label className="flex items-center space-x-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="delivery"
-                          value="batumi44"
-                          checked={deliveryOption === 'batumi44'}
-                          onChange={(e) => setDeliveryOption(e.target.value)}
-                          className="text-[#438c71]"
-                        />
-                        <div>
-                          <span className="font-medium">{t('productDetail.locations.batumi')}</span>
-                          <span className="text-gray-600 ml-2">({t('productDetail.locations.batumiAddress2')})</span>
-                          <span className="text-[#438c71] font-semibold ml-2">
-                            - {t('checkout.free')}
-                          </span>
-                        </div>
-                      </label>
-                    )}
-
-                    {availableLocations.includes('qutaisi') && (
-                      <label className="flex items-center space-x-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="delivery"
-                          value="qutaisi"
-                          checked={deliveryOption === 'qutaisi'}
-                          onChange={(e) => setDeliveryOption(e.target.value)}
-                          className="text-[#438c71]"
-                        />
-                        <div>
-                          <span className="font-medium">{t('productDetail.locations.qutaisi')}</span>
-                          <span className="text-gray-600 ml-2">({t('productDetail.locations.qutaisiAddress')})</span>
-                          <span className="text-[#438c71] font-semibold ml-2">
-                            - {t('checkout.free')}
-                          </span>
-                        </div>
-                      </label>
-                    )}
-                    {availableLocations.includes('kobuleti') && (
-                      <label className="flex items-center space-x-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="delivery"
-                          value="kobuleti"
-                          checked={deliveryOption === 'kobuleti'}
-                          onChange={(e) => setDeliveryOption(e.target.value)}
-                          className="text-[#438c71]"
-                        />
-                        <div>
-                          <span className="font-medium">{t('productDetail.locations.kobuleti')}</span>
-                          <span className="text-gray-600 ml-2">({t('productDetail.locations.kobuletiAddress')})</span>
-                          <span className="text-[#438c71] font-semibold ml-2">
-                            - {t('checkout.free')}
-                          </span>
-                        </div>
-                      </label>
-                    )}
+                    ))}
                   </div>
                 ) : (
-                  <p className="text-red-500">{t('checkout.noDeliveryLocations')}</p>
+                  <div className="space-y-2">
+                    <p className="text-red-500">{t('checkout.noDeliveryLocations')}</p>
+                    <p className="text-sm text-gray-600">
+                      {locale === 'en'
+                        ? 'All items in your cart must be available at the same store. Remove incompatible products or choose items from the same city.'
+                        : 'კალათაში ყველა პროდუქტი ერთსა და იმავე ფილიალში უნდა იყოს ხელმისაწვდომი. ამოიღეთ შეუთავსებელი პროდუქტები ან აირჩიეთ ერთი ქალაქის პროდუქტები.'}
+                    </p>
+                    <Link href="/cart">
+                      <Button variant="outline" className="mt-2">
+                        {locale === 'en' ? 'Back to cart' : 'კალათაში დაბრუნება'}
+                      </Button>
+                    </Link>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -594,7 +529,7 @@ const SummaryPage = () => {
 
                 <Button
                   onClick={paymentMethod === 'card' ? handleBOGPayment : handlePlaceOrder}
-                  disabled={!deliveryOption || !paymentMethod || processing}
+                  disabled={deliveryStores.length === 0 || !deliveryOption || !paymentMethod || processing}
                   className="w-full flex text-[20px] font-bold items-center justify-center gap-2 px-6 py-3 text-lg  text-white bg-[#438c71] rounded-lg hover:bg-[#3a7a5f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {processing ? (

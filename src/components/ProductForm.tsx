@@ -19,6 +19,7 @@ import { ProductSchema } from "@/lib/validators";
 import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
 import React from "react";
+import StoreLocationsPicker from "@/components/StoreLocationsPicker";
 
 type ProductFormValues = z.infer<typeof ProductSchema>;
 
@@ -42,11 +43,8 @@ export default function ProductForm() {
       descriptionEn: "",
       price: undefined,
       sizes: [{ size: "SIZE_80_190", price: 0 }],
-      tbilisi: false,
-      batumi: false,
-      batumi44: false,
-      qutaisi: false,
-      kobuleti: false,
+      storeIds: [] as string[],
+      storeStock: [] as { storeId: string; stock: number }[],
       popular: false,
       sales: 0,
     },
@@ -364,82 +362,20 @@ export default function ProductForm() {
             </div>
           )}
 
-          {/* tbilisi */}
+          {/* store locations */}
           <FormField
             control={form.control}
-            name="tbilisi"
+            name="storeStock"
             render={({ field }) => (
               <FormItem>
+                <FormLabel>ფილიალები და მარაგი</FormLabel>
                 <FormControl>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={field.value} onChange={e => field.onChange(e.target.checked)} />
-                    თბილისი
-                  </label>
+                  <StoreLocationsPicker
+                    value={field.value ?? []}
+                    onChange={field.onChange}
+                  />
                 </FormControl>
-              </FormItem>
-            )}
-          />
-
-          {/* batumi */}
-          <FormField
-            control={form.control}
-            name="batumi"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={field.value} onChange={e => field.onChange(e.target.checked)} />
-                    ბათუმი
-                  </label>
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          {/* batumi44 */}
-          <FormField
-            control={form.control}
-            name="batumi44"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={field.value} onChange={e => field.onChange(e.target.checked)} />
-                    ბათუმი (44)
-                  </label>
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          {/* qutaisi */}
-          <FormField
-            control={form.control}
-            name="qutaisi"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={field.value} onChange={e => field.onChange(e.target.checked)} />
-                    ქუთაისი
-                  </label>
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          {/* kobuleti */}
-          <FormField
-            control={form.control}
-            name="kobuleti"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={field.value} onChange={e => field.onChange(e.target.checked)} />
-                    ქობულეთი
-                  </label>
-                </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />

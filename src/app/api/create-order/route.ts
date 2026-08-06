@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { bogTokenManager } from "@/lib/bog-token";
 import { CartItem } from "@/lib/types";
-import { getCartForUser } from "@/lib/cart-helpers";
+import { getCartForUser, validateDeliveryForCart } from "@/lib/cart-helpers";
 import {
   extractBogOrderId,
   extractBogRedirectUrl,
@@ -77,6 +77,24 @@ export async function POST(req: NextRequest) {
     }
 
     const cartItems = cart.items as CartItem[];
+
+    const deliveryCheck = await validateDeliveryForCart(
+      cartItems,
+      orderData.deliveryOption
+    );
+    if (!deliveryCheck.valid) {
+      return NextResponse.json(
+        {
+          error: deliveryCheck.stockError
+            ? "Insufficient stock at the selected store"
+            : deliveryCheck.availableSlugs.length === 0
+              ? "Cart items are not available at a common pickup location"
+              : "Invalid delivery location for this cart",
+        },
+        { status: 400 }
+      );
+    }
+
     const basket: {
       quantity: number;
       unit_price: number;

@@ -42,6 +42,15 @@ const BaseProductSchema = z.object({
   batumi44: z.boolean().optional(),
   qutaisi: z.boolean().optional(),
   kobuleti: z.boolean().optional(),
+  storeIds: z.array(z.string()).optional(),
+  storeStock: z
+    .array(
+      z.object({
+        storeId: z.string(),
+        stock: z.number().int().min(0),
+      })
+    )
+    .optional(),
 
   popular: z.boolean().optional(),
   sales: z.number().int().nonnegative().optional(),
@@ -130,6 +139,7 @@ export const cartItemSchema = z.object({
   qty: z.number().int().nonnegative("Quantity must be a positive number"),
   image: z.string().min(1, "Image is required"),
   price: currency,
+  storeSlugs: z.array(z.string()).optional(),
   tbilisi: z.boolean().optional(),
   batumi: z.boolean().optional(),
   batumi44: z.boolean().optional(),

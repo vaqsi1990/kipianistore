@@ -4,6 +4,8 @@ import { auth } from '../../../../../auth';
 import { prisma } from '@/lib/prisma';
 import { CartItem } from '@/lib/types';
 import { Prisma } from '@prisma/client';
+import { getProductStoreSlugs, legacyFlagsFromSlugs, hasAnyStock } from '@/lib/store-utils';
+import { getProductStockAtStore } from '@/lib/stock-utils';
 
 function calculateCartTotals(items: CartItem[]) {
   const itemsPrice = items.reduce((total, item) => {
@@ -53,7 +55,14 @@ export async function POST(request: NextRequest) {
     // Get product details
     const product = await prisma.product.findFirst({
       where: { id: productId },
-      include: { sizes: true }
+      include: {
+        sizes: true,
+        stores: {
+          include: {
+            store: { select: { slug: true } },
+          },
+        },
+      },
     });
 
     if (!product) {
@@ -61,6 +70,24 @@ export async function POST(request: NextRequest) {
         { error: 'Product not found' },
         { status: 404 }
       );
+    }
+
+    if (!hasAnyStock(product)) {
+      return NextResponse.json(
+        { error: 'Product is out of stock at all locations' },
+        { status: 400 }
+      );
+    }
+
+    const selectedStore = cookieStore.get('selectedStore')?.value;
+    if (selectedStore && selectedStore !== 'all') {
+      const stock = await getProductStockAtStore(productId, selectedStore);
+      if (stock < qty) {
+        return NextResponse.json(
+          { error: 'Insufficient stock at the selected store' },
+          { status: 400 }
+        );
+      }
     }
 
     // Handle OTHERS products (they don't have sizes, only a single price)
@@ -123,13 +150,17 @@ export async function POST(request: NextRequest) {
       updatedItems[existingItemIndex].qty += qty;
     } else {
       // Add new item
+      const storeSlugs = getProductStoreSlugs(product);
+      const flags = legacyFlagsFromSlugs(storeSlugs);
       const newItem: CartItem = {
         productId,
         name: product.title,
-        size: product.category === "OTHERS" ? "N/A" : size, // Use "N/A" for OTHERS products
+        size: product.category === "OTHERS" ? "N/A" : size,
         qty: qty,
         image: product.images[0],
         price: finalPrice.toFixed(2),
+        storeSlugs,
+        ...flags,
       };
       updatedItems = [...existingItems, newItem];
     }

@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import LanguageSwitcher from "./LanguageSwitcher";
 import CartIcon from "./CartIcon";
+import StoreSelector from "./StoreSelector";
 
 const Menu = () => {
   const [open, setOpen] = useState(false);
@@ -36,6 +37,7 @@ const Menu = () => {
         {open && (
           <div className="absolute bg-[#FAF3E0] text-black left-0 w-full h-[calc(100vh-80px)] flex flex-col items-center justify-start gap-8 text-xl z-[50] top-20">
             <div className="mt-[20px] text-[18px] bg-[#e6dfd9] font-semibold flex flex-col items-center gap-8 georgian-text">
+              <StoreSelector />
               <Link href="/contact" onClick={handleClose}> {t('contact')} </Link>
               <Link href="/list" onClick={handleClose}> {t('products')} </Link>
               {session ? (
