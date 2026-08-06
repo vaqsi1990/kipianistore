@@ -1,0 +1,692 @@
+{
+  "navitems": {
+    "products": "პროდუქტები",
+    "about": "შესახებ",
+    "contact": "კონტაქტი",
+    "login": "შესვლა",
+    "profile": "პროფილი",
+    "signOut": "გასვლა",
+    "userProfile": " პროფილი",
+    "cart": "კალათა"
+  },
+  "auth": {
+    "signIn": {
+      "title": "შესვლა",
+      "description": "შედით თქვენს ანგარიშში",
+      "email": "ელ-ფოსტა",
+      "emailPlaceholder": "შეიყვანეთ თქვენი ელ-ფოსტა",
+      "password": "პაროლი",
+      "passwordPlaceholder": "შეიყვანეთ თქვენი პაროლი",
+      "forgotPassword": "დაგავიწყდათ პაროლი?",
+      "signInButton": "შესვლა",
+      "signingIn": "იმყოფება შესვლის პროცესში...",
+      "dontHaveAccount": "არ გაქვთ ანგარიში?",
+      "signUp": "რეგისტრაცია",
+      "invalidCredentials": "არასწორი ელ-ფოსტა ან პაროლი",
+      "signInWithGoogle": "შესვლა Google-ით"
+    },
+    "signUp": {
+      "title": "ანგარიშის შექმნა",
+      "description": "შეიყვანეთ თქვენი ინფორმაცია ",
+      "name": "სახელი",
+      "namePlaceholder": "შეიყვანეთ თქვენი სრული სახელი",
+      "email": "ელ-ფოსტა",
+      "emailPlaceholder": "შეიყვანეთ თქვენი ელ-ფოსტა",
+      "password": "პაროლი",
+      "passwordPlaceholder": "შეიყვანეთ თქვენი პაროლი",
+      "confirmPassword": "პაროლის დადასტურება",
+      "confirmPasswordPlaceholder": "დაადასტურეთ თქვენი პაროლი",
+      "signUpButton": "რეგისტრაცია",
+      "creatingAccount": "იქმნება ანგარიში...",
+      "alreadyHaveAccount": "უკვე გაქვთ ანგარიში?",
+      "signIn": "შესვლა",
+      "checkEmail": "შეამოწმეთ თქვენი ელ-ფოსტა",
+      "checkEmailDescription": "ჩვენ გამოგიგზავნეთ დადასტურების ბმული",
+      "checkEmailInstructions": "გთხოვთ შეამოწმოთ თქვენი ელ-ფოსტა და დააჭიროთ დადასტურების ბმულს ანგარიშის დასასრულებლად.",
+      "resendVerification": "ხელახლა გაგზავნა",
+      "backToSignIn": "შესვლაზე დაბრუნება",
+      "verificationSent": "დადასტურების ელ-ფოსტა წარმატებით გაიგზავნა! გთხოვთ შეამოწმოთ თქვენი ყუთი.",
+      "verificationError": "ხელახლა გაგზავნა ვერ მოხერხდა"
+    },
+    "forgotPassword": {
+      "title": "პაროლის აღდგენა",
+      "description": "შეიყვანეთ თქვენი ელ-ფოსტა და ჩვენ გამოგიგზავნით ბმულს პაროლის აღსადგენად.",
+      "email": "ელ-ფოსტა",
+      "emailPlaceholder": "შეიყვანეთ თქვენი ელ-ფოსტა",
+      "sendResetLink": "აღდგენის ბმულის გაგზავნა",
+      "sending": "იგზავნება...",
+      "backToSignIn": "შესვლაზე დაბრუნება"
+    },
+    "resetPassword": {
+      "title": "პაროლის შეცვლა",
+      "description": "შეიყვანეთ თქვენი ახალი პაროლი ქვემოთ.",
+      "newPassword": "ახალი პაროლი",
+      "passwordPlaceholder": "შეიყვანეთ თქვენი ახალი პაროლი",
+      "confirmPassword": "პაროლის დადასტურება",
+      "confirmPasswordPlaceholder": "დაადასტურეთ თქვენი ახალი პაროლი",
+      "resetPassword": "პაროლის შეცვლა",
+      "resetting": "იცვლება...",
+      "signIn": "შესვლა",
+      "backToSignIn": "შესვლაზე დაბრუნება",
+      "invalidLink": "არასწორი აღდგენის ბმული",
+      "requestNewLink": "ახალი ბმულის მოთხოვნა"
+    },
+    "verifyEmail": {
+      "title": "ელ-ფოსტის დადასტურება",
+      "description": "დაადასტურეთ თქვენი ელ-ფოსტა ანგარიშის დასასრულებლად",
+      "verifying": "ელ-ფოსტის დადასტურება",
+      "verifyingDescription": "გთხოვთ დაელოდოთ, სანამ ვადასტურებთ თქვენს ელ-ფოსტას...",
+      "success": "ელ-ფოსტა დადასტურებულია!",
+      "error": "დადასტურება ვერ მოხერხდა",
+      "noToken": "დადასტურების ტოკენი არ არის მოწოდებული",
+      "verificationFailed": "დადასტურება ვერ მოხერხდა",
+      "errorOccurred": "დადასტურებისას შეცდომა მოხდა. გთხოვთ სცადოთ თავიდან ან დაუკავშირდეთ მხარდაჭერას.",
+      "continueToSignIn": "გადადით შესვლაზე",
+      "resendVerification": "დადასტურების ელ-ფოსტის ხელახლა გაგზავნა",
+      "backToSignIn": "შესვლაზე დაბრუნება",
+      "resendSuccess": "დადასტურების ელ-ფოსტა წარმატებით გაიგზავნა! გთხოვთ შეამოწმოთ თქვენი ყუთი.",
+      "resendError": "დადასტურების ელ-ფოსტის ხელახლა გაგზავნა ვერ მოხერხდა"
+    }
+  },
+  "helper": {
+    "details": "დეტალები"
+  },
+  "categories": {
+    "title": "კატეგორიები",
+    "subtitle": "აღმოაჩინეთ ჩვენი ფართო არჩევანი ხარისხიანი ავეჯისა და სახლის დეკორის",
+    "details": "დეტალები",
+    "allCategories": "ყველა კატეგორია",
+    "products": "პროდუქტები",
+    "viewAll": "ყველა კატეგორიის ნახვა",
+    "viewCategory": "კატეგორიის ნახვა",
+    "filter": "ფილტრი"
+  },
+  "brands": {
+    "title": "ჩვენი პარტნიორები",
+    "subtitle": "ავეჯის ინდუსტრიის წამყვანი ბრენდების მიერ სანდო"
+  },
+  "hero": {
+    "title": "პრემიუმ ლაუნჯ სოფა სავარძელი",
+    "description": "ჩვენ გთავაზობთ უკიდურესად კომფორტულ ლაუნჯ სოფა სავარძელს. სახლში ან ოფისში დასვენების დრო უფრო მიმზიდველი იქნება, ვიდრე ოდესმე, როცა აირჩევთ თანამედროვე ლაუნჯ სოფა სავარძელს.",
+    "cta": "დავიწყოთ შოპინგი",
+    "filter": "ფილტრი",
+    "title2": "გაიღვიძე",
+    "title3": "კომფორტში",
+    "title4": "ყოველ დილას."
+  },
+  
+  "productList": {
+    "title": "ჩვენი",
+    "subtitle": "პროდუქტები",
+    "newArrival": "ახალი ჩამოსვლა",
+    "sales": "ფასდაკლება",
+    "trending": "ტრენდული",
+    "viewAll": "ყველა პროდუქტის ნახვა",
+    "newProducts": "ახალი პროდუქტები",
+    "popularProducts": "პოპულარული პროდუქტები",
+    "salesProducts": "ფასდაკლებული პროდუქტები"
+  },
+  "categorySlider": {
+    "bedroom": "საძინებელი",
+    "living": "საცხოვრებელი",
+    "dining": "სასადილო",
+    "lounge": "ლაუნჯი",
+    "officeChair": "საოფისე სავარძელი",
+    "kitchen": "სამზარეულო"
+  },
+  "common": {
+    "filter": "ფილტრი",
+    "clearAllFilters": " გასუფთავება",
+    "clearFilters": "გასუფთავება",
+    "found": "ნაპოვნია",
+    "products": "პროდუქტი",
+    "activeFilters": "აქტიური ფილტრები",
+    "sortBy": "დალაგება",
+    "newest": "ახალი",
+    "priceLowToHigh": "ფასი: დაბალიადან მაღლად",
+    "priceHighToLow": "ფასი: მაღლადან დაბალად",
+    "nameAZ": "სახელი: A-Z",
+    "minPrice": "მინიმალური ფასი",
+    "maxPrice": "მაქსიმალური ფასი",
+    "category": "კატეგორია",
+    "brand": "ბრენდი",
+    "priceRange": "ფასის დიაპაზონი",
+    "allBrands": "ყველა ბრენდი",
+    "allCategories": "ყველა კატეგორია"
+  },
+  "productDetail": {
+    "breadcrumb": {
+      "home": "მთავარი"
+    },
+    "product": {
+      "brand": "ბრენდი",
+      "size": "ზომა",
+      "price": "ფასი",
+      "category": "კატეგორია",
+      "description": "აღწერა",
+      "availability": "ხელმისაწვდომობა",
+      "addToCart": "კალათაში დამატება",
+      "productNotFound": "პროდუქტი ვერ მოიძებნა",
+      "loading": "იტვირთება...",
+      "outOfStock": "ყველა ლოკაციაზე არ არის მარაგში"
+    },
+    "locations": {
+      "tbilisi": "თბილისი",
+      "batumi": "ბათუმი",
+      "batumi44": "ბათუმი",
+      "qutaisi": "ქუთაისი",
+      "kobuleti": "ქობულეთი",
+      "tbilisiAddress": " თ. ერისთავის 1",
+      "batumiAddress": " ალ. პუშკინის 115/117",
+      "batumiAddress2": " ალ. პუშკინის 44",
+      "qutaisiAddress": " ი. ჭავჭავაძის 51",
+      "kobuletiAddress": " შ. რუსთაველის 151",
+      "batumi44Address": " ალ. პუშკინის 44"
+    },
+    "similarProducts": {
+      "title": "მსგავსი პროდუქტები",
+      "viewDetails": "დეტალების ნახვა",
+      "noProducts": "მსგავსი პროდუქტები ვერ მოიძებნა",
+      "noProductsDescription": "ამ კატეგორიაში სხვა პროდუქტები ვერ მოიძებნა ამ მომენტში."
+    }
+  },
+  "allPage": {
+    "hero": {
+      "title": "ჩვენი პროდუქტები",
+      "breadcrumb": {
+        "home": "მთავარი",
+        "products": "პროდუქტები"
+      }
+    },
+    "filters": {
+      "title": "ფილტრები",
+      "activeFilters": "აქტიური ფილტრები",
+      "search": "ძიება",
+      "searchPlaceholder": "პროდუქტების ძიება...",
+      "categories": {
+        "title": "კატეგორიები",
+        "allCategories": "ყველა კატეგორია"
+      },
+      "sizes": {
+        "title": "ზომები",
+        "allSizes": "ყველა ზომა"
+      },
+      "priceRange": {
+        "title": "ფასის დიაპაზონი",
+        "minimumPrice": "მინიმალური ფასი",
+        "maximumPrice": "მაქსიმალური ფასი"
+      },
+      "brand": {
+        "title": "ბრენდი",
+        "allBrands": "ყველა ბრენდი"
+      },
+      "others": "სხვა",
+      "clearFilters": "გასუფთავება"
+    },
+    "results": {
+      "found": "ნაპოვნია",
+      "products": "პროდუქტი",
+      "noProductsFound": "პროდუქტი ვერ მოიძებნა",
+      "tryDifferentFilters": "სცადეთ სხვა ფილტრები ან მოძებნეთ სხვა პროდუქტი",
+      "productCount": "პროდუქტი",
+      "productsCount": "პროდუქტი",
+      "openSidebar": "ფილტრი",
+      "closeSidebar": "ფილტრის დახურვა"
+    },
+    "sorting": {
+      "sortBy": "სორტირება:",
+      "newest": "უახლესი",
+      "priceLowToHigh": "ფასი: დაბლიდან მაღლა",
+      "priceHighToLow": "ფასი: მაღლიდან დაბლა",
+      "nameAZ": "სახელი: A-Z"
+    }
+  },
+  "footer": {
+    "companyDescription": "პრემიუმ ავეჯის მაღაზია, რომელიც გთავაზობთ მაღალი ხარისხის, სტილურ ნაწარმს ყველა ოთახისთვის.",
+    "quickLinks": "სწრაფი ბმულები",
+    "allProducts": "ყველა პროდუქტი",
+    "aboutUs": "ჩვენს შესახებ",
+    "contact": "კონტაქტი",
+    "followUs": "გამოგვყევით",
+    "copyright": "© 2024 ავეჯის მაღაზია. ყველა უფლება დაცულია.",
+    "privacy": "კონფიდენციალურობა",
+    "terms": "წესები",
+    "kobuleti": "ქ.ქობულეთი: ",
+    "kutaisi": "ქ.ქუთაისი: ",
+    "tbilisi": "ქ.თბილისი: ",
+    "batumi": "ქ.ბათუმი:",
+    "tbilisiAddress": "თ. ერისთავის 1",
+    "kutaisiAddress": "ი. ჭავჭავაძის 51",
+    "kobuletiAddress": "შ. რუსთაველის 151",
+    "batumiAddress": "ალ. პუშკინი 115/117",
+    "batumiAddress2": "ალ. პუშკინის 44"
+  },
+  
+  "profile": {
+    "title": "პროფილის დეშბორდი",
+    "welcome": "კეთილი იყოს თქვენი დაბრუნება, {name}!",
+    "user": "მომხმარებელი",
+    "admin": "ადმინისტრატორი",
+    "email": "ელ-ფოსტა",
+    "memberSince": "წევრია",
+    "address": "მისამართი",
+    "addressSaved": "მისამართი შენახულია",
+    "paymentMethod": "გადახდის მეთოდი",
+    "totalOrders": "სულ შეკვეთები",
+    "cartItems": "ნივთები",
+    "accountType": "ანგარიშის ტიპი",
+    "signOut": "გასვლა",
+    "recoverPassword": "პაროლის აღდგენა",
+    "adminActions": {
+      "title": "ადმინისტრატორის ქმედებები",
+      "description": "მართეთ თქვენი მაღაზია და პროდუქტები",
+      "addNewProduct": " დამატება",
+      "manageAllProducts": "ყველა პროდუქტის მართვა",
+      "actions": "ადმინი"
+    },
+    "recentOrders": {
+      "title": "უახლესი შეკვეთები",
+      "description": "თქვენი უახლესი შეკვეთების ნახვა",
+      "noOrders": "შეკვეთები არ არის",
+      "noOrdersDescription": "თქვენ ჯერ არ გაგიკეთებიათ შეკვეთა.",
+      "orderNumber": "შეკვეთა #{number}",
+      "total": "ჯამი: {amount} GEL",
+      "paid": "გადახდილი",
+      "pending": "მისაღებად",
+      "delivered": "მიწოდებული",
+      "refreshing": "განახლება...",
+      "refreshAll": "განაახლეთ ყველა BOG შეკვეთა",
+      "testTargetOrder": "ტესტირება მიზნობრივი შეკვეთის",
+      "testToken": "ტოკენის ტესტირება",
+      "errorFetchingStatus": "შეცდომა BOG შეკვეთის სტატუსის მიღებისას",
+      "errorToken": "შეცდომა ტოკენის ტესტირებისას",
+      "completed": "გადახდილი",
+      "created": "შექმნილი",
+      "processing": "მუშავდება",
+      "rejected": "უარყოფილი",
+      "refund_requested": "მოთხოვნილია დაბრუნება",
+      "refunded": "დაბრუნებული",
+      "refunded_partially": "ნაწილობრივ დაბრუნებული",
+      "auth_requested": "მოთხოვნილია პრეავტორიზაცია",
+      "blocked": "დაბლოკილი",
+      "partial_completed": "ნაწილობრივ გადახდილი"
+    },
+
+    "quickActions": {
+      "title": "სწრაფი ქმედებები",
+      "description": "საერთო ამოცანები და ნავიგაცია",
+      "viewCart": "კალათის ნახვა",
+      "browseProducts": "პროდუქტების ნახვა"
+    }
+  },
+  "search": {
+    "placeholder": " ძიება...",
+    "suggestions": "ძიების შემოთავაზებები",
+    "inMattresses": "მატრასებში",
+    "inPillows": "ბალიშებში",
+    "inQuilts": "საბანებში"
+  },
+  "contact": {
+    "title": "კონტაქტი",
+    "breadcrumb": {
+      "home": "მთავარი",
+      "contact": "დაგვიკავშირდით",
+      "sendMessage": "დაგვიკავშირდით"
+    },
+    "hero": {
+      "title": "კონტაქტი",
+      "subtitle": "კონტაქტი"
+    },
+    "form": {
+      "title": "დაგვიკავშირდით",
+      "description": "ჩვენ აქ ვართ თქვენი კითხვების, უკუკავშირისა და პარტნიორობის შესაძლებლობების სწრაფად და ეფექტურად მოსაგვარებლად.",
+      "fullName": "სრული სახელი",
+      "fullNamePlaceholder": "შეიყვანეთ თქვენი სრული სახელი",
+      "email": "ელ-ფოსტა",
+      "emailPlaceholder": "შეიყვანეთ თქვენი ელ-ფოსტა",
+      "phone": "ტელეფონი",
+      "phonePlaceholder": "შეიყვანეთ თქვენი ტელეფონის ნომერი",
+      "subject": "თემა",
+      "subjectOptions": {
+        "payment": "გადახდის პრობლემა",
+        "furniture": "ავეჯის პრობლემა",
+        "agreement": "შეთანხმების პრობლემა",
+        "carrying": "ტრანსპორტირების პრობლემა"
+      },
+      "message": "თქვენი შეტყობინება",
+      "messagePlaceholder": "დაწერეთ თქვენი შეტყობინება",
+      "submit": "გამოაგზავნე"
+    },
+    "info": {
+      "address": "მისამართი",
+      "email": "ელ-ფოსტა",
+      "phone": "ტელეფონი",
+      "kobuleti": "ქ.ქობულეთი",  
+      "kobuleti3": "შ. რუსთაველის 151",
+      "kutaisi": "ქ.ქუთაისი",
+      "kutaisi3": "იოსებ ჭავჭავაძის 51",
+      "tbilisi": "ქ.თბილისი",
+      "tbilisi3": "ტ. ერისტავი 1",
+      "batumi": "ქ.ბათუმი",
+      "batumi4": "ალ. პუშკინი 115/117",
+      "batumi3": "ალ. პუშკინი 44",
+      "batumi2": "ქ.ბათუმი",
+      "kobuleti2": "ქ.ქობულეთი",
+      "kutaisi2": "ქ.ქუთაისი",
+      "tbilisi2": "ქ.თბილისი",
+      "phoneNumber": "123-456-7890",
+      "locations": "მდებარეობები",
+      "call": "დარეკვა",
+      "selectSubject": "აირჩიეთ თემა"
+    }
+  },
+  "cart": {
+    "title": "საყიდლების კალათა",
+    "empty": "თქვენი კალათა ცარიელია",
+    "emptyDescription": "დაიწყეთ შოპინგი კალათაში ნივთების დასამატებლად",
+    "continueShopping": "გააგრძელეთ შოპინგი",
+    "items": "ნივთები",
+    "subtotal": "ქვეჯამი",
+    "shipping": "ტრანსპორტირება",
+    "tax": "გადასახადი",
+    "total": "სულ",
+    "checkout": "გადადით გადახდაზე",
+    "remove": "წაშლა",
+    "quantity": "რაოდენობა",
+    "price": "ფასი",
+    "clearCart": "კალათის გასუფთავება",
+    "orderSummary": "შეკვეთის შემაჯამებელი",
+    "deliveryOptions": "მიწოდების ვარიანტები",
+    "standardDelivery": "სტანდარტული მიწოდება",
+    "expressDelivery": "სწრაფი მიწოდება",
+    "sameDayDelivery": "იმავე დღის მიწოდება",
+    "standardDeliveryDesc": "3-5 სამუშაო დღე",
+    "expressDeliveryDesc": "1-2 სამუშაო დღე",
+    "sameDayDeliveryDesc": "არჩეულ რაიონებში ხელმისაწვდომი",
+    "free": "უფასო",
+    "paymentMethod": "გადახდის მეთოდი",
+    "creditCard": "საკრედიტო/დებეტური ბარათი",
+    "cashOnDelivery": "ნაღდი ფული მიწოდებისას",
+    "placeOrder": "შეკვეთის გაფორმება",
+    "processingOrder": "შეკვეთა მუშავდება..."
+  },
+  "productForm": {
+    "title": "პროდუქტის დამატება",
+    "name": "სახელი",
+    "namePlaceholder": "პროდუქტის სახელი",
+    "nameEn": "სახელი (ინგლისურად)",
+    "nameEnPlaceholder": "პროდუქტის სახელი ინგლისურად",
+    "category": "კატეგორია",
+    "images": "სურათები",
+    "brand": "ბრენდი",
+    "brandPlaceholder": "აირჩიეთ ბრენდი",
+    "description": "აღწერა",
+    "descriptionPlaceholder": "აღწერა",
+    "descriptionEn": "აღწერა (ინგლისურად)",
+    "descriptionEnPlaceholder": "აღწერა ინგლისურად",
+    "sizesAndPrices": "ზომები და ფასები",
+    "addSize": "ზომის დამატება",
+    "size": "ზომა",
+    "price": "ფასი",
+    "location": "მდებარეობა",
+    "tbilisi": "თბილისი",
+    "batumi": "ბათუმი",
+    "qutaisi": "ქუთაისი",
+    "popular": "პოპულარული",
+    "sales": "ფასდაკლება",
+    "submit": "პროდუქტის დამატება",
+    "error": "პროდუქტის დამატებისას შეცდომა მოხდა"
+  },
+  "editProductForm": {
+    "title": "პროდუქტის რედაქტირება",
+    "description": "განაახლეთ პროდუქტის ინფორმაცია",
+    "submit": "პროდუქტის განახლება",
+    "error": "პროდუქტის განახლებისას შეცდომა მოხდა"
+  },
+  "filter": {
+    "title": "აირჩიე კატეგორია",
+    "price": "ფასი",
+    "min": "მინ:",
+    "max": "მაქს:",
+    "brand": "ბრენდი",
+    "brandPlaceholder": "აირჩიეთ ბრენდი"
+  },
+  "cloudinaryUploader": {
+    "title": "სურათების ატვირთვა",
+    "uploadButton": "სურათების ატვირთვა",
+    "uploadedImages": "ატვირთული სურათები",
+    "noImages": "სურათები ჯერ არ არის ატვირთული."
+  },
+  "pagination": {
+    "previous": "წინა",
+    "next": "შემდეგი",
+    "page": "გვერდი",
+    "of": "დან"
+  },
+  "dropdown": {
+    "selectSize": "აირჩიეთ ზომა",
+    "selectBrand": "აირჩიეთ ბრენდი"
+  },
+  "checkout": {
+    "title": "გადახდა",
+    "backToCart": "კალათაზე დაბრუნება",
+    "backToPersonal": "უკან დაბრუნება",
+    "step": "ნაბიჯი",
+    "of": "დან",
+    "personalInfo": "პერსონალური ინფორმაცია",
+    "personalInfoDescription": "გთხოვთ მიუთითოთ თქვენი პერსონალური მონაცემები მიწოდებისთვის",
+    "personalDetails": "პერსონალური მონაცემები",
+    "firstName": "სახელი",
+    "lastName": "გვარი",
+    "phone": "ტელეფონის ნომერი",
+    "email": "ელ-ფოსტა",
+    "idNumber": " პირადობის ნომერი",
+    "streetAddress": "ქუჩის მისამართი",
+    "city": "ქალაქი",
+    "postalCode": "საფოსტო კოდი",
+    "country": "ქვეყანა",
+    "additionalInfo": "დამატებითი ინფორმაცია",
+    "additionalInfoPlaceholder": "ბინა, სართული ან სპეციალური ინსტრუქციები",
+    "continueToSummary": "შემდეგზე გადასვლა",
+    "free": "უფასო",
+    "paymentMethod": "გადახდის მეთოდი",
+    "creditCard": "საკრედიტო/დებეტური ბარათი",
+    "cashOnDelivery": "ნაღდი ფული მიწოდებისას",
+    "orderItems": "შეკვეთის ნივთები",
+    "size": "ზომა",
+    "quantity": "რაოდენობა",
+    "subtotal": "ქვეჯამი",
+    "tax": "დღგ",
+    "delivery": "მიწოდება",
+    "total": "სულ",
+    "placeOrder": "შეკვეთის გაფორმება",
+    "securePayment": "უსაფრთხო გადახდა",
+    "noDeliveryLocations": "თქვენი კალათის ნივთებისთვის მიწოდების ლოკაციები არ არის ხელმისაწვდომი",
+
+    "deliveryPricingNote": "თქვენს ქალაქში მიწოდება უფასოა. სხვა ლოკაციებზე სტანდარტული მიწოდების საფასურია.",
+    "processing": "მუშავდება...",
+    "deliveryOptions": "მიწოდების ვარიანტები",
+    "breadcrumb": {
+      "home": "მთავარი",
+      "cart": "კალათა",
+      "checkout": "გადახდა"
+    },
+    "personalInformation": {
+      "title": "პირადი ინფორმაცია",
+      "firstName": "სახელი",
+      "firstNamePlaceholder": "შეიყვანეთ თქვენი სახელი",
+      "lastName": "გვარი",
+      "lastNamePlaceholder": "შეიყვანეთ თქვენი გვარი",
+      "phone": "ტელეფონის ნომერი",
+      "phonePlaceholder": "შეიყვანეთ თქვენი ტელეფონის ნომერი",
+      "email": "ელ-ფოსტა",
+      "emailPlaceholder": "შეიყვანეთ თქვენი ელ-ფოსტა",
+      "idNumber": "პირადობის ნომერი",
+      "idNumberPlaceholder": "შეიყვანეთ თქვენი 11-ციფრიანი პირადობის ნომერი"
+    },
+    "deliveryAddress": "მიწოდების მისამართი",
+    "deliveryAddressDetails": {
+      "title": "მიწოდების მისამართი",
+      "streetAddress": "ქუჩის მისამართი",
+      "streetAddressPlaceholder": "შეიყვანეთ ქუჩის მისამართი",
+      "city": "ქალაქი",
+      "cityPlaceholder": "შეიყვანეთ ქალაქი",
+      "postalCode": "საფოსტო კოდი",
+      "postalCodePlaceholder": "შეიყვანეთ საფოსტო კოდი",
+      "country": "ქვეყანა",
+      "additionalInfo": "ბინა, სართული ან სპეციალური მითითებები",
+      "additionalInfoPlaceholder": "შენიშვნები, ბინის ნომერი, ა.შ."
+    },
+
+    "deliveryOptionsDetails": {
+      "title": "მიწოდების ვარიანტები",
+      "standard": "სტანდარტული მიწოდება",
+      "standardDesc": "3-5 სამუშაო დღე",
+      "standardPrice": "უფასო",
+      "express": "სწრაფი მიწოდება",
+      "expressDesc": "1-2 სამუშაო დღე",
+      "expressPrice": "+₾15",
+      "sameDay": "იმავე დღის მიწოდება",
+      "sameDayDesc": "არჩეულ რაიონებში ხელმისაწვდომი",
+      "sameDayPrice": "+₾25"
+    },
+    "paymentOptions": {
+      "title": "გადახდის ვარიანტები",
+      "card": {
+        "title": "საკრედიტო/დებეტური ბარათი",
+        "description": "Visa, Mastercard, American Express"
+      },
+      "cash": {
+        "title": "ნაღდი ფული მიწოდებისას",
+        "description": "გადაიხადეთ მიწოდებისას"
+      },
+      "bankTransfer": {
+        "title": "საბანკო გადარიცხვა",
+        "description": "გადარიცხვა ბანკის ანგარიშზე"
+      }
+    },
+    "orderSummary": "შეკვეთის შემაჯამებელი",
+    "orderSummaryDescription": "გადახედეთ თქვენს შეკვეთას და დაადასტურეთ დეტალები",
+    "orderSummaryDetails": {
+      "title": "შეკვეთის შემაჯამებელი",
+      "items": "ნივთები",
+      "subtotal": "ქვეჯამი",
+      "shipping": "ტრანსპორტირება",
+      "tax": "დღგ (18%)",
+      "total": "სულ",
+      "placeOrder": "შეკვეთის გაფორმება",
+      "processingOrder": "შეკვეთა მუშავდება..."
+    },
+    "validation": {
+      "firstNameRequired": "სახელი სავალდებულოა",
+      "lastNameRequired": "გვარი სავალდებულოა",
+      "phoneRequired": "ტელეფონის ნომერი სავალდებულოა",
+      "phoneInvalid": "შეიყვანეთ სწორი ტელეფონის ნომერი",
+      "emailRequired": "ელ-ფოსტა სავალდებულოა",
+      "emailInvalid": "შეიყვანეთ სწორი ელ-ფოსტა",
+      "idNumberRequired": "პირადობის ნომერი სავალდებულოა",
+      "idNumberInvalid": "შეიყვანეთ სწორი 11-ციფრიანი პირადობის ნომერი",
+      "streetAddressRequired": "ქუჩის მისამართი სავალდებულოა",
+      "cityRequired": "ქალაქი სავალდებულოა",
+      "postalCodeRequired": "საფოსტო კოდი სავალდებულოა",
+      "deliveryOptionRequired": "აირჩიეთ მიწოდების ვარიანტი",
+      "paymentMethodRequired": "აირჩიეთ გადახდის მეთოდი"
+    },
+    "errors": {
+      "cartEmpty": "კალათა ცარიელია",
+      "orderFailed": "შეკვეთის გაფორმება ვერ მოხერხდა",
+      "tryAgain": "სცადეთ თავიდან"
+    },
+    "success": "შეკვეთა წარმატებით გაფორმდა!",
+  
+    "redirecting": "გადამისამართება შეკვეთის დადასტურებაზე..."
+
+  },
+  "orderConfirmation": {
+    "title": "შეკვეთა დადასტურებულია!",
+    "thankYou": "მადლობა თქვენი შეძენისთვის.",
+    "processingMessage": "ჩვენ მივიღეთ თქვენი შეკვეთა და დაუყოვნებლად დავიწყებთ მის დამუშავებას.",
+    "orderDetails": "შეკვეთის დეტალები",
+    "orderNumber": "შეკვეთის ნომერი",
+    "orderDate": "შეკვეთის თარიღი",
+    "estimatedDelivery": "სავარაუდო მიწოდება",
+    "paymentStatus": "გადახდის სტატუსი",
+    "paid": "გადახდილი",
+    "pending": "მიმდინარე",
+    "customerInformation": "მომხმარებლის ინფორმაცია",
+    "deliveryInformation": "მიწოდების ინფორმაცია",
+    "orderSummary": "შეკვეთის შეჯამება",
+    "quantity": "რაოდენობა",
+    "subtotal": "ქვეჯამი",
+    "total": "სულ",
+    "continueShopping": "შოპინგის გაგრძელება",
+    "viewOrders": "შეკვეთების ნახვა",
+    "emailConfirmation": "თქვენ მიიღებთ ელ-ფოსტით დადასტურებას თქვენი შეკვეთის დეტალებით მალე.",
+    "contactSupport": "თუ გაქვთ კითხვები, გთხოვთ დაუკავშირდეთ ჩვენს მომხმარებელთა მხარდაჭერას.",
+    "orderNotFound": "შეკვეთა ვერ მოიძებნა",
+    "orderNotFoundMessage": "შეკვეთის დეტალების ჩვენება ვერ მოხერხდა. გთხოვთ შეამოწმოთ თქვენი შეკვეთების ისტორია.",
+    "loading": "შეკვეთის დეტალები იტვირთება...",
+    "error": "შეკვეთის დეტალების ჩვენება ვერ მოხერხდა"
+  },
+  "admin": {
+    "dashboard": {
+      "title": "ადმინისტრატორის დეშბორდი",
+      "description": "მართეთ თქვენი მაღაზია, პროდუქტები და შეკვეთები",
+      "totalProducts": "სულ პროდუქტი",
+      "totalOrders": "სულ შეკვეთა",
+      "totalRevenue": "სულ შემოსავალი",
+      "pendingOrders": "მიმდინარე შეკვეთები",
+      "avgOrderValue": "საშუალო შეკვეთის ღირებულება",
+      "backToDashboard": "დეშბორდზე დაბრუნება"
+    },
+    "orders": {
+      "title": "შეკვეთების მართვა",
+      "description": "ნახეთ და მართეთ ყველა მომხმარებლის შეკვეთა",
+      "allOrders": "ყველა შეკვეთა",
+      "orderDetails": "შეკვეთის დეტალები",
+      "orderId": "შეკვეთის ID",
+      "customer": "მომხმარებელი",
+      "items": "ნივთები",
+      "total": "სულ",
+      "payment": "გადახდა",
+      "delivery": "მიწოდება",
+      "date": "თარიღი",
+      "actions": "ადმინი",
+      "status": {
+        "paid": "გადახდილი",
+        "pending": "მიმდინარე",
+        "delivered": "მიწოდებული",
+        "inTransit": "ტრანზიტში"
+      },
+      "noOrders": "შეკვეთები არ არის",
+      "noOrdersDescription": "შეკვეთები გამოჩნდება აქ, როცა მომხმარებლები შეიძენენ"
+    },
+    "orderDetail": {
+      "title": "შეკვეთა #{id}",
+      "placedOn": "გაფორმებულია {date}",
+      "backToOrders": "შეკვეთებზე დაბრუნება",
+      "editOrder": "შეკვეთის რედაქტირება",
+      "updateStatus": "სტატუსის განახლება",
+      "orderStatus": "შეკვეთის სტატუსი",
+      "paymentStatus": "გადახდის სტატუსი",
+      "deliveryStatus": "მიწოდების სტატუსი",
+    
+      "orderItems": "შეკვეთის ნივთები",
+      "customerInformation": "მომხმარებლის ინფორმაცია",
+      "contactDetails": "საკონტაქტო დეტალები",
+      "shippingAddress": "მიწოდების მისამართი",
+      "orderSummary": "შეკვეთის შემაჯამებელი",
+      "itemsTotal": "ნივთები სულ",
+      "shipping": "ტრანსპორტირება",
+      "tax": "დღგ (18%)",
+      "total": "სულ",
+      "paymentInformation": "გადახდის ინფორმაცია",
+      "orderTimeline": "შეკვეთის ქრონოლოგია",
+      "orderPlaced": "შეკვეთა გაფორმებულია",
+      "paymentReceived": "გადახდა მიღებულია",
+      "delivered": "მიწოდებულია",
+      "paidOn": "გადახდილია {date}",
+      "deliveredOn": "მიწოდებულია {date}"
+    }
+  }
+}

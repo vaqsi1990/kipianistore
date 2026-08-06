@@ -1,0 +1,688 @@
+{
+  "navitems": {
+    "products": "Products",
+    "about": "About",
+    "contact": "Contacts",
+    "login": "Login",
+    "profile": "Profile",
+    "signOut": "Sign Out",
+    "userProfile": " Profile",
+    "cart": "Cart"
+  },
+  "search": {
+    "placeholder": "Search products...",
+    "suggestions": "Search suggestions for",
+    "inMattresses": "in mattresses",
+    "inPillows": "in pillows",
+    "inQuilts": "in quilts"
+  },
+  "helper": {
+    "details": "Details"
+  },
+  
+  "contact": {
+    "title": "Contact",
+    "hero": {
+      "title": "Our Contacts"
+   
+    },
+    "breadcrumb": {
+      "home": "Home",
+      "contact": "Contact",
+      "sendMessage": " Your Message"
+    },
+    "form": {
+      "title": "Our Contacts",
+      "description": "We are here to address your inquiries, feedback, and partnership opportunities promptly and effectively.",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "Enter your full name",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email address",
+      "phone": "Phone No",
+      "phonePlaceholder": "Type your phone number",
+      "subject": "Subject",
+      "subjectOptions": {
+        "payment": "Payment Problem",
+        "furniture": "Furniture Problem",
+        "agreement": "Agreement Problem",
+        "carrying": "Carrying Problem"
+      },
+      "message": "Your Message",
+      "messagePlaceholder": "Type your message",
+      "submit": "Send "
+    },
+    "info": {
+      "address": "ADDRESS",
+      "batumi2": "Batumi",
+      "kobuleti2": "Kobuleti",
+      "kutaisi2": "Kutaisi",
+      "tbilisi2": "Tbilisi",
+      "email": "Email",
+      "phone": "PHONE",
+      "kobuleti": "Kobuleti",
+      "kobuleti3": " Sh. Rustaveli 151",
+      "kutaisi": "Kutaisi",
+      "kutaisi3": " I. Chavchavadze 51",
+      "tbilisi": "Tbilisi",
+      "tbilisi3": " T. Eristavi 1",
+      "batumi": "Batumi",
+      "batumi4": " A. Pushkin 115/117",
+      "batumi3": "A. Pushkin 44",
+      "phoneNumber": "123-456-7890",
+      "locations": "Locations",
+      "call": "Phone No",
+      "selectSubject": "Select a subject"
+    }
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "emptyDescription": "Start shopping to add items to your cart",
+    "continueShopping": "Continue Shopping",
+    "items": "Items",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "tax": "Tax",
+    "total": "Total",
+    "checkout": "Proceed to Checkout",
+    "remove": "Remove",
+    "quantity": "Quantity",
+    "price": "Price",
+    "clearCart": "Clear Cart",
+    "orderSummary": "Order Summary",
+    "deliveryOptions": "Delivery Options",
+    "standardDelivery": "Standard Delivery",
+    "expressDelivery": "Express Delivery",
+    "sameDayDelivery": "Same Day Delivery",
+    "standardDeliveryDesc": "3-5 business days",
+    "expressDeliveryDesc": "1-2 business days",
+    "sameDayDeliveryDesc": "Available in select areas",
+    "free": "Free",
+    "paymentMethod": "Payment Method",
+    "creditCard": "Credit/Debit Card",
+    "cashOnDelivery": "Cash on Delivery",
+    "placeOrder": "Delivery",
+    "processingOrder": "Processing Order..."
+  },
+  "checkout": {
+    "title": "Checkout",
+    "backToCart": "Back to Cart",
+    "backToPersonal": "Back ",
+    "step": "Step",
+    "of": "of",
+    "personalInfo": "Personal Information",
+    "personalInfoDescription": "Please provide your personal details for delivery",
+    "personalDetails": "Personal Details",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "phone": "Phone Number",
+    "email": "Email",
+    "idNumber": " ID Number",
+    "streetAddress": "Street Address",
+    "city": "City",
+    "postalCode": "Postal Code",
+    "country": "Country",
+    "paymentMethod": "Payment Method",  
+    "creditCard": "Credit/Debit Card",
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "total": "Total",
+    "cashOnDelivery": "Cash on Delivery",
+    "placeOrder": "Place Order",
+    "processingOrder": "Processing Order...",
+  
+    "additionalInfoPlaceholder": "Apartment, Floor, or Special Instructions",
+    "continueToSummary": "Continue to Summary",
+    "personalInformation": {
+      "title": "Personal Information",
+      "firstName": "First Name",
+      "firstNamePlaceholder": "Enter your first name",
+      "lastName": "Last Name",
+      "lastNamePlaceholder": "Enter your last name",
+      "phone": "Phone Number",
+      "phonePlaceholder": "Enter your phone number",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email address",
+      "idNumber": "Georgian ID Number",
+      "idNumberPlaceholder": "Enter your 11-digit Georgian ID number"
+    },
+    "deliveryAddress": "Delivery Address",
+    "deliveryAddressDetails": {
+      "title": "Delivery Address",
+      "streetAddress": "Street Address",
+      "streetAddressPlaceholder": "Enter your street address",
+      "city": "City",
+      "cityPlaceholder": "Enter your city",
+      "postalCode": "Postal Code",
+      "postalCodePlaceholder": "Enter postal code",
+      "country": "Country",
+      "additionalInfo": "Additional Information",
+      "additionalInfoPlaceholder": "Apartment, suite, etc. (optional)"
+    },
+    "deliveryOptions": "Delivery Options",
+    "deliveryOptionsDetails": {
+      "title": "Delivery Options",
+      "standard": "Standard Delivery",
+      "standardDesc": "3-5 business days",
+      "standardPrice": "Free",
+      "express": "Express Delivery",
+      "expressDesc": "1-2 business days",
+      "expressPrice": "+₾15",
+      "sameDay": "Same Day Delivery",
+      "sameDayDesc": "Available in select areas",
+      "sameDayPrice": "+₾25"
+    },
+    "paymentOptions": {
+      "title": "Payment Options",
+      "card": {
+        "title": "Credit/Debit Card",
+        "description": "Visa, Mastercard, American Express"
+      },
+      "cash": {
+        "title": "Cash on Delivery",
+        "description": "Pay when you receive your order"
+      },
+      "bankTransfer": {
+        "title": "Bank Transfer",
+        "description": "Transfer to bank account"
+      }
+    },
+    "orderSummary": "Order Summary",
+    "orderSummaryDescription": "Review your order and confirm the details",
+    "orderSummaryDetails": {
+      "title": "Order Summary",
+      "items": "Items",
+      "subtotal": "Subtotal",
+      "shipping": "Shipping",
+      "tax": "VAT (18%)",
+      "total": "Total",
+      "placeOrder": "Place Order",
+      "processingOrder": "Processing Order..."
+    },
+    "validation": {
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required",
+      "phoneRequired": "Phone number is required",
+      "phoneInvalid": "Please enter a valid phone number",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email address",
+      "idNumberRequired": "Georgian ID number is required",
+      "idNumberInvalid": "Please enter a valid 11-digit Georgian ID number",
+      "streetAddressRequired": "Street address is required",
+      "cityRequired": "City is required",
+      "postalCodeRequired": "Postal code is required",
+      "deliveryOptionRequired": "Please select a delivery option",
+      "paymentMethodRequired": "Please select a payment method"
+    },
+    "errors": {
+      "cartEmpty": "Your cart is empty",
+      "orderFailed": "Failed to place order",
+      "tryAgain": "Please try again"
+    },
+    "success": "Order placed successfully!",
+    "processing": "Processing your order...",
+    "redirecting": "Redirecting to order confirmation...",
+    "additionalInfo": "Apartment, Floor, or Special Instructions",
+    "free": "Free",
+    "orderItems": "Order Items",
+    "size": "Size",
+    "quantity": "Quantity",
+    "delivery": "Delivery",
+    "securePayment": "Secure Payment",
+    "noDeliveryLocations": "No delivery locations available for your cart items",
+    "yourCity": "Your City",
+    "deliveryPricingNote": "Delivery to your city is free. Other locations have standard delivery fees."
+  },
+
+  "productForm": {
+    "title": "Add Product",
+
+    "name": "Name",
+    "namePlaceholder": "Product name",
+    "nameEn": "Name (English)",
+    "nameEnPlaceholder": "Product name in English",
+    "category": "Category",
+    "images": "Images",
+    "brand": "Brand",
+    "brandPlaceholder": "Select brand",
+    "description": "Description",
+    "descriptionPlaceholder": "Description",
+    "descriptionEn": "Description (English)",
+    "descriptionEnPlaceholder": "Description in English",
+    "sizesAndPrices": "Sizes and Prices",
+    "addSize": "Add Size",
+    "size": "Size",
+    "price": "Price",
+    "location": "Location",
+    "tbilisi": "Tbilisi",
+    "batumi": "Batumi",
+    "qutaisi": "Kutaisi",
+    "popular": "Popular",
+    "sales": "Sales",
+    "submit": "Add Product",
+    "error": "Error occurred while adding product"
+  },
+  "editProductForm": {
+    "title": "Edit Product",
+    "description": "Update product information",
+    "submit": "Update Product",
+    "error": "Error occurred while updating product"
+  },
+  "filter": {
+    "title": "Choose Category",
+    "price": "Price",
+    "min": "Min:",
+    "max": "Max:",
+    "brand": "Brand",
+    "brandPlaceholder": "Select brand"
+  },
+  "cloudinaryUploader": {
+    "title": "Upload Images",
+    "uploadButton": "Upload Images",
+    "uploadedImages": "Uploaded Images",
+    "noImages": "No images uploaded yet."
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page",
+    "of": "of"
+  },
+  "dropdown": {
+    "selectSize": "Select Size",
+    "selectBrand": "Select Brand"
+  },
+
+  "auth": {
+    "signIn": {
+      "title": "Sign In",
+      "description": "Sign In to your account",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email address",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "forgotPassword": "Forgot Password?",
+      "signInButton": "Sign In",
+      "signingIn": "Signing In...",
+      "dontHaveAccount": "Don't have an account?",
+      "signUp": "Sign Up",
+      "invalidCredentials": "Invalid email or password",
+      "signInWithGoogle": "Sign in with Google"
+    },
+    "signUp": {
+      "title": "Create Account",
+      "description": "Enter your information below to sign up",
+      "name": "Name",
+      "namePlaceholder": "Enter your full name",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email address",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm your password",
+      "signUpButton": "Sign Up",
+      "creatingAccount": "Creating Account...",
+      "alreadyHaveAccount": "Already have an account?",
+      "signIn": "Sign In",
+      "checkEmail": "Check Your Email",
+      "checkEmailDescription": "We have sent a verification link to",
+      "checkEmailInstructions": "Please check your email and click the verification link to complete your account setup.",
+      "resendVerification": "Resend Verification Email",
+      "backToSignIn": "Back to Sign In",
+      "verificationSent": "Verification email sent successfully! Please check your inbox.",
+      "verificationError": "Failed to resend verification email"
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "description": "Enter your email address and we'll send you a link to reset your password.",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email address",
+      "sendResetLink": "Send Reset Link",
+      "sending": "Sending...",
+      "backToSignIn": "Back to Sign In"
+    },
+    "resetPassword": {
+      "title": "Reset Password",
+      "description": "Enter your new password below.",
+      "newPassword": "New Password",
+      "passwordPlaceholder": "Enter your new password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm your new password",
+      "resetPassword": "Reset Password",
+      "resetting": "Resetting...",
+      "signIn": "Sign In",
+      "backToSignIn": "Back to Sign In",
+      "invalidLink": "Invalid Reset Link",
+      "requestNewLink": "Request New Link"
+    },
+    "verifyEmail": {
+      "title": "Verify Email",
+      "description": "Verify your email address to complete your account setup",
+      "verifying": "Verifying Email",
+      "verifyingDescription": "Please wait while we verify your email address...",
+      "success": "Email Verified!",
+      "error": "Verification Failed",
+      "noToken": "No verification token provided",
+      "verificationFailed": "Verification failed",
+      "errorOccurred": "An error occurred during verification. Please try again or contact support.",
+      "continueToSignIn": "Continue to Sign In",
+      "resendVerification": "Resend Verification Email",
+      "backToSignIn": "Back to Sign In",
+      "resendSuccess": "Verification email sent successfully! Please check your inbox.",
+      "resendError": "Failed to resend verification email"
+    }
+  },
+  "categories": {
+    "title": "Categories",
+    "subtitle": "Discover our wide selection of quality furniture and home decor",
+    "details": "Details",
+    "allCategories": "All Categories",
+    "products": "Products",
+    "viewAll": "View All Categories",
+    "viewCategory": "View Category",
+    "filter": "Filter"
+  },
+
+  "brands": {
+    "title": "Our Partners",
+    "subtitle": "Trusted by leading brands in the furniture industry"
+  },
+  "hero": {
+    "title": "Premium Lounge Sofa Chair",
+    "description": "We offer you an extremely comfortable lounge sofa chair. Taking the time to relax at home or the office will be more appealing than ever when you choose a modern lounge sofa chair.",
+    "cta": "Let's Shop Now",
+    "filter": "Filter",
+    "title2": " Wake Up in",
+    "title3": "Comfort",
+    "title4": "Every Morning."
+  },
+  "productList": {
+    "title": "Our",
+    "subtitle": "Products",
+    "newArrival": "New Arrival",
+    "sales": "Sales",
+    "trending": "Trending",
+    "viewAll": "View All Products",
+    "newProducts": "New Products",
+    "popularProducts": "Popular Products",
+    "salesProducts": "Products on Sale"
+  },
+  "categorySlider": {
+    "bedroom": "Bedroom",
+    "living": "Living",
+    "dining": "Dining",
+    "lounge": "Lounge",
+    "officeChair": "Office Chair",
+    "kitchen": "Kitchen"
+  },
+  "productDetail": {
+    "breadcrumb": {
+      "home": "Home"
+    },
+    "product": {
+      "brand": "Brand",
+      "size": "Size",
+      "price": "Price",
+      "category": "Category",
+      "description": "Description",
+      "availability": "Availability",
+      "addToCart": "Add to Cart",
+      "productNotFound": "Product not found",
+      "loading": "Loading...",
+      "outOfStock": "Out of stock at all locations"
+    },
+    "locations": {
+      "tbilisi": "Tbilisi",
+      "batumi": "Batumi",
+      "batumi44": "Batumi",
+      "qutaisi": "Kutaisi",
+      "kobuleti": "Kobuleti",
+      "tbilisiAddress": " T. Eristavi 1",
+      "batumiAddress": " A. Pushkin 115/117",
+      "batumiAddress2": " A. Pushkin 44",
+      "qutaisiAddress": " Z. Purtzeladze 15",
+      "kobuletiAddress": " Sh. Rustaveli 151",
+      "batumi44Address": " A. Pushkin 44"
+    },
+    "similarProducts": {
+      "title": "Similar Products",
+      "viewDetails": "View Details",
+      "noProducts": "No similar products found",
+      "noProductsDescription": "We couldn't find any other products in this category at the moment."
+    }
+  },
+  "allPage": {
+    "hero": {
+      "title": "Our Products",
+      "breadcrumb": {
+        "home": "Home",
+        "products": "Products"
+      }
+    },
+    "filters": {
+      "title": "Filters",
+      "activeFilters": "active filters",
+      "search": "Search",
+      "searchPlaceholder": "Search products...",
+      "categories": {
+        "title": "Categories",
+        "allCategories": "All Categories"
+      },
+      "sizes": {
+        "title": "Sizes",
+        "allSizes": "All Sizes"
+      },
+      "priceRange": {
+        "title": "Price Range",
+        "minimumPrice": "Minimum Price",
+        "maximumPrice": "Maximum Price"
+      },
+      "brand": {
+        "title": "Brand",
+        "allBrands": "All Brands"
+      },
+      "others": "Others",
+      "clearFilters": "Clear Filters"
+    },
+    "results": {
+      "found": "Found",
+      "products": "Products",
+      "noProductsFound": "No products found",
+      "tryDifferentFilters": "Try different filters or search for another product",
+      "productCount": "product",
+      "productsCount": "products",
+      "openSidebar": "filter",
+      "closeSidebar": "Close SideBar"
+    },
+    "sorting": {
+      "sortBy": "Sort:",
+      "newest": "Newest",
+      "priceLowToHigh": "Price: Low to High",
+      "priceHighToLow": "Price: High to Low",
+      "nameAZ": "Name: A-Z"
+    }
+  },
+  "footer": {
+    "companyDescription": "Premium furniture store offering high-quality, stylish pieces for every room.",
+    "quickLinks": "Quick Links",
+    "allProducts": "All Products",
+    "aboutUs": "About Us",
+    "contact": "Contact",
+    "followUs": "Follow Us",
+    "copyright": "© 2024 Furniture Store. All rights reserved.",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "kobuleti": "Kobuleti: ",
+    "kutaisi": "Kutaisi: ",
+    "tbilisi": "Tbilisi:",
+    "tbilisiAddress": " T. Eristavi 1",
+    "kutaisiAddress": " I. Chavchavadze 51",
+    "kobuletiAddress": " Sh. Rustaveli 151",
+    "batumiAddress": " A. Pushkin 115/117",
+    "batumiAddress2": "A. Pushkin 44",
+    "batumi": "Batumi:"
+   
+  },
+  "common": {
+    "filter": "Filter",
+    "clearAllFilters": "Clear All Filters",
+    "clearFilters": "Clear Filters",
+    "found": "Found",
+    "products": "Products",
+    "activeFilters": "Active Filters",
+    "sortBy": "Sort:",
+    "newest": "Newest",
+    "priceLowToHigh": "Price: Low to High",
+    "priceHighToLow": "Price: High to Low",
+    "nameAZ": "Name: A-Z",
+    "minPrice": "Min Price",
+    "maxPrice": "Max Price",
+    "category": "Category",
+    "brand": "Brand",
+    "priceRange": "Price Range",
+    "allBrands": "All Brands",
+    "allCategories": "All Categories"
+  },
+  "profile": {
+    "title": "Profile Dashboard",
+    "welcome": "Welcome back, {name}!",
+    "user": "User",
+    "admin": "Admin",
+    "email": "Email",
+    "memberSince": "Member Since",
+    "address": "Address",
+    "addressSaved": "Address saved",
+    "paymentMethod": "Payment Method",
+    "totalOrders": "Total Orders",
+    "cartItems": "Cart Items",
+    "accountType": "Account Type",
+    "signOut": "Sign Out",
+    "recoverPassword": "Recover Password",
+    "adminActions": {
+      "title": "Admin Actions",
+      "description": "Manage your store and products",
+      "addNewProduct": "Add New Product",
+      "manageAllProducts": "Manage All Products",
+      "actions": "Actions"
+    },
+    "recentOrders": {
+      "title": "Recent Orders",
+      "description": "Your latest order history",
+      "orderNumber": "Order #{number}",
+      "total": "Total: ${amount}",
+      "paid": "Paid",
+      "pending": "Pending",
+      "delivered": "Delivered",
+      "noOrders": "No orders yet",
+      "noOrdersDescription": "Start shopping to see your orders here"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "description": "Common tasks and navigation",
+      "viewCart": "View Cart",
+      "browseProducts": "Browse Products"
+    }
+  },
+ 
+  "orderConfirmation": {
+    "title": "Order Confirmed", 
+    "thankYou": "Thank you for your order!",
+    "orderNumber": "Order Number",
+    "orderDate": "Order Date",
+    "orderDetails": "Order Details",
+    "processingMessage": "We have received your order and will process it as soon as possible.",
+    "estimatedDelivery": "Estimated Delivery Date",
+    "paid": "Paid",
+    "pending": "Pending", 
+    "delivered": "Delivered",
+    "quantity": "Quantity",
+    "orderNotFound": "Order Not Found",
+    "customerInformation": "Customer Information",
+    "deliveryInformation": "Delivery Information",
+    "paymentStatus": "Payment Status",
+    "continueShopping": "Continue Shopping",
+    "viewOrders": "View Orders",
+    "emailConfirmation": "We'll send you a confirmation email",
+    "contactSupport": "Contact Support",
+    "deliveryAddress": "Delivery Address",
+    "paymentMethod": "Payment Method",
+    "orderSummary": "Order Summary",
+    "items": "Items",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "tax": "VAT",
+    "total": "Total",
+    "nextSteps": {
+      "title": "Next Steps",
+      "emailConfirmation": "We'll send you a confirmation email",
+      "trackingInfo": "Delivery tracking information will be sent via email",
+      "contactSupport": "Contact us if you have any questions"
+    },
+    "actions": {
+      "continueShopping": "Continue Shopping",
+      "viewOrders": "View Orders",
+      "contactSupport": "Contact Support"
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Admin Dashboard",
+      "description": "Manage your store, products, and orders",
+      "totalProducts": "Total Products",
+      "totalOrders": "Total Orders",
+      "totalRevenue": "Total Revenue",
+      "pendingOrders": "Pending Orders",
+      "avgOrderValue": "Avg Order Value",
+      "backToDashboard": "Back to Dashboard"
+    },
+    "orders": {
+      "title": "Order Management",
+      "description": "View and manage all customer orders",
+      "allOrders": "All Orders",
+      "orderDetails": "Order Details",
+      "orderId": "Order ID",
+      "customer": "Customer",
+      "items": "Items",
+      "total": "Total",
+      "payment": "Payment",
+      "delivery": "Delivery",
+      "date": "Date",
+      "actions": "Actions",
+      "status": {
+        "paid": "Paid",
+        "pending": "Pending",
+        "delivered": "Delivered",
+        "inTransit": "In Transit"
+      },
+      "noOrders": "No orders yet",
+      "noOrdersDescription": "Orders will appear here when customers make purchases"
+    },
+    "orderDetail": {
+      "title": "Order #{id}",
+      "placedOn": "Placed on {date}",
+      "backToOrders": "Back to Orders",
+      "editOrder": "Edit Order",
+      "updateStatus": "Update Status",
+      "orderStatus": "Order Status",
+      "paymentStatus": "Payment Status",
+      "deliveryStatus": "Delivery Status",
+    
+      "orderItems": "Order Items",
+      "customerInformation": "Customer Information",
+      "contactDetails": "Contact Details",
+      "shippingAddress": "Shipping Address",
+      "orderSummary": "Order Summary",
+      "itemsTotal": "Items Total",
+      "shipping": "Shipping",
+      "tax": "Tax (18%)",
+      "total": "Total",
+      "paymentInformation": "Payment Information",
+      "orderTimeline": "Order Timeline",
+      "orderPlaced": "Order Placed",
+      "paymentReceived": "Payment Received",
+      "delivered": "Delivered",
+      "paidOn": "Paid on {date}",
+      "deliveredOn": "Delivered on {date}"
+    }
+  }
+}

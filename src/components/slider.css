@@ -1,0 +1,53 @@
+.slider {
+  height: 250px;
+
+  margin: auto;
+
+  position: relative;
+
+  width: 100%;
+
+  display: grid;
+}
+
+.slide-track {
+  display: flex;
+
+  width: calc(250px * 18);
+
+  animation: scroll 40s linear infinite;
+}
+
+.slide-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(calc(-250px * 9));
+  }
+}
+
+.slide {
+  display: flex;
+
+  height: 200px;
+
+  width: 200px;
+
+  align-items: center;
+
+  padding: 15px;
+
+  perspective: 100px;
+}
+
+img {
+  width: 100%;
+
+  transition: transform 1s;
+}
