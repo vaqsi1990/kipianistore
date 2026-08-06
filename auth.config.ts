@@ -1,29 +1,28 @@
-
-import type { NextAuthConfig } from 'next-auth';
-import { NextResponse } from 'next/server';
+import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
-  providers: [], // Required by NextAuthConfig type
+  providers: [],
+  pages: {
+    signIn: "/sign-in",
+  },
   callbacks: {
-    authorized({ request, auth }: any) {
-      // Array of regex patterns of paths we want to protect
+    authorized({ request, auth }) {
       const protectedPaths = [
-        /\/shipping-address/,
-        /\/payment-method/,
-        /\/place-order/,
-        /\/profile/,
-        /\/user\/(.*)/,
-        /\/order\/(.*)/,
-        /\/admin/,
+        /\/(ka|en)\/profile/,
+        /\/(ka|en)\/adminall/,
+        /\/(ka|en)\/checkout\/personal/,
+        /\/(ka|en)\/summary/,
+        /\/(ka|en)\/new/,
+        /\/(ka|en)\/edit/,
       ];
 
-      // Get pathname from the req URL object
       const { pathname } = request.nextUrl;
-      // Check if user is not authenticated and accessing a protected path
-      if (!auth && protectedPaths.some((p) => p.test(pathname))) return false;
+      const isProtected = protectedPaths.some((p) => p.test(pathname));
 
-      // Always return true for non-protected paths
-      // Session cart ID will be handled by middleware or individual routes
+      if (isProtected && !auth) {
+        return false;
+      }
+
       return true;
     },
   },

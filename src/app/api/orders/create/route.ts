@@ -3,6 +3,7 @@ import { auth } from '../../../../../auth';
 import { prisma } from '@/lib/prisma';
 import { sendOrderReceipt } from '@/lib/email';
 import { sendOrderToAdmin } from '@/lib/email';
+import { getCartForUser } from '@/lib/cart-helpers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,14 +22,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Get the user's cart
-    const cart = await prisma.cart.findFirst({
-      where: {
-        OR: [
-          { userId: session.user.id },
-          { sessionCartId: session.user.id }
-        ]
-      }
-    });
+    const cart = await getCartForUser(session.user.id);
 
     if (!cart || cart.items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });

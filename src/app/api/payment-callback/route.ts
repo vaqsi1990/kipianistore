@@ -1,8 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server'
-import crypto from 'crypto'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import {
+  isBogPaymentSuccessful,
+  mapBogStatusToPaymentStatus,
+} from "@/lib/bog-utils";
+import { sendOrderReceipt, sendOrderToAdmin } from "@/lib/email";
 
-const PUBLIC_KEY = `
+const PUBLIC_KEY = (
+  process.env.BOG_PUBLIC_KEY ||
+  `
 -----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu4RUyAw3+CdkS3ZNILQh
 zHI9Hemo+vKB9U2BSabppkKjzjjkf+0Sm76hSMiu/HFtYhqWOESryoCDJoqffY0Q
@@ -12,83 +20,163 @@ tcBuHV4f7qsynQT+f2UYbESX/TLHwT5qFWZDHZ0YUOUIvb8n7JujVSGZO9/+ll/g
 4ZIWhC1MlJgPObDwRkRd8NFOopgxMcMsDIZIoLbWKhHVq67hdbwpAq9K9WMmEhPn
 PwIDAQAB
 -----END PUBLIC KEY-----
-`.trim()
+`
+).trim();
+
+interface BogCallbackBody {
+  order_id?: string;
+  external_order_id?: string;
+  order_status?: { key?: string; value?: string };
+  purchase_units?: {
+    transfer_amount?: string;
+    request_amount?: string;
+  };
+  payment_detail?: Record<string, unknown>;
+}
 
 export async function POST(req: NextRequest) {
-  const signature = req.headers.get("callback-signature")
-  const rawBody = await req.text()
+  const signature =
+    req.headers.get("callback-signature") ||
+    req.headers.get("Callback-Signature");
+  const rawBody = await req.text();
+
+  if (!signature) {
+    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+  }
 
   try {
-    // Validate signature
-    const verify = crypto.createVerify("RSA-SHA256")
-    verify.update(rawBody)
-    verify.end()
+    const verify = crypto.createVerify("RSA-SHA256");
+    verify.update(rawBody);
+    verify.end();
 
-    const isValid = verify.verify(PUBLIC_KEY, signature!, "base64")
+    const isValid = verify.verify(PUBLIC_KEY, signature, "base64");
 
     if (!isValid) {
-      console.error("❌ Callback verification failed")
-      return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
-    const data = JSON.parse(rawBody)
+    const data = JSON.parse(rawBody);
+    const { event, body } = data as {
+      event?: string;
+      body?: BogCallbackBody;
+    };
 
+    if (event !== "order_payment" || !body) {
+      return new NextResponse("OK", { status: 200 });
+    }
 
-    // Extract payment information
-    const { event, body } = data
-    const { order_id, external_order_id, status, amount } = body
+    const bogOrderId = body.order_id;
+    const externalOrderId = body.external_order_id;
+    const statusKey = body.order_status?.key;
+    const transferAmount = parseFloat(
+      body.purchase_units?.transfer_amount ||
+        body.purchase_units?.request_amount ||
+        "0"
+    );
 
-    if (event === 'order_payment') {
-      // Find the order in your database
-      const order = await prisma.order.findFirst({
-        where: { 
-          id: external_order_id 
-        }
-      })
+    const order = await prisma.order.findFirst({
+      where: {
+        OR: [
+          ...(externalOrderId
+            ? [{ id: externalOrderId }, { externalOrderId }]
+            : []),
+          ...(bogOrderId ? [{ bogOrderId: String(bogOrderId) }] : []),
+        ],
+      },
+      include: {
+        orderitems: true,
+        user: true,
+      },
+    });
 
-      if (!order) {
-        console.error(`❌ Order not found: ${external_order_id}`)
-        return NextResponse.json({ error: "Order not found" }, { status: 404 })
+    if (!order) {
+      console.error("BOG callback: order not found", {
+        externalOrderId,
+        bogOrderId,
+      });
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    const isPaid = isBogPaymentSuccessful(statusKey);
+    const paymentStatus = mapBogStatusToPaymentStatus(statusKey);
+
+    if (isPaid && transferAmount > 0) {
+      const orderTotal = Number(order.totalPrice);
+      if (Math.abs(orderTotal - transferAmount) > 0.01) {
+        console.error("BOG callback: amount mismatch", {
+          orderTotal,
+          transferAmount,
+          orderId: order.id,
+        });
+        return NextResponse.json(
+          { error: "Payment amount mismatch" },
+          { status: 400 }
+        );
       }
+    }
 
-      // Update order status based on payment status
-      let isPaid = false
+    if (order.isPaid && isPaid) {
+      return new NextResponse("OK", { status: 200 });
+    }
 
-      switch (status) {
-        case 'APPROVED':
-        case 'COMPLETED':
-          isPaid = true
-          break
-        case 'DECLINED':
-        case 'FAILED':
-        case 'CANCELLED':
-          isPaid = false
-          break
-        default:
-          isPaid = false
-      }
+    const updatedOrder = await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        isPaid,
+        paidAt: isPaid ? new Date() : order.paidAt,
+        bogOrderId: bogOrderId ? String(bogOrderId) : order.bogOrderId,
+        paymentStatus,
+        paymentResult: JSON.parse(
+          JSON.stringify({
+            bogOrderId,
+            status: statusKey,
+            statusDescription: body.order_status?.value,
+            transferAmount,
+            paymentDetail: body.payment_detail,
+            processedAt: new Date().toISOString(),
+          })
+        ),
+      },
+      include: {
+        orderitems: true,
+        user: true,
+      },
+    });
 
-      // Update the order in database
-      await prisma.order.update({
-        where: { id: external_order_id },
+    if (isPaid) {
+      await prisma.cart.updateMany({
+        where: { userId: order.userId },
         data: {
-          isPaid,
-          paidAt: isPaid ? new Date() : null,
-          paymentResult: {
-            bogOrderId: order_id,
-            status: status,
-            amount: amount,
-            processedAt: new Date().toISOString()
-          }
+          items: [],
+          itemsPrice: new Prisma.Decimal(0),
+          totalPrice: new Prisma.Decimal(0),
+          shippingPrice: new Prisma.Decimal(0),
+          taxPrice: new Prisma.Decimal(0),
+        },
+      });
+
+      try {
+        const shippingAddress = order.shippingAddress as {
+          email?: string;
+          firstName?: string;
+          lastName?: string;
+        };
+        const customerEmail =
+          shippingAddress?.email || updatedOrder.user?.email;
+        const customerName = `${shippingAddress?.firstName || ""} ${shippingAddress?.lastName || ""}`.trim();
+
+        if (customerEmail) {
+          await sendOrderReceipt(customerEmail, updatedOrder, customerName);
         }
-      })
-
-
+        await sendOrderToAdmin(updatedOrder);
+      } catch (emailError) {
+        console.error("BOG callback: email failed", emailError);
+      }
     }
 
-    return new NextResponse("OK", { status: 200 })
+    return new NextResponse("OK", { status: 200 });
   } catch (err) {
-    console.error("❌ Callback handler error", err)
-    return new NextResponse("Internal Server Error", { status: 500 })
+    console.error("Payment callback error:", err);
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

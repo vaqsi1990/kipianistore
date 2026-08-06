@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 // Generate static params for all locales
 export function generateStaticParams() {
-  return [{ locale: 'en' }, { locale: 'ge' }];
+  return [{ locale: 'en' }, { locale: 'ka' }];
 }
 
 export default async function RootLayout({
@@ -31,7 +31,7 @@ export default async function RootLayout({
   params,
 }: Readonly<{
   children: React.ReactNode;
-  params: { locale: 'ge' | 'en' };
+  params: { locale: 'ka' | 'en' };
 }>) {
   const session = await auth();
   const messages = await getMessages();

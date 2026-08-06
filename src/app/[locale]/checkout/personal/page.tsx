@@ -7,8 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User, ArrowLeft } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
-import { useRouter, useParams } from 'next/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { toast } from 'sonner';
 import { useCart } from '@/lib/context/CartContext';
 
@@ -28,7 +27,6 @@ interface DeliveryAddress {
 const PersonalInfoPage = () => {
   const t = useTranslations();
   const router = useRouter();
-  const params = useParams();
   const { cart, loading } = useCart();
   const [address, setAddress] = useState<DeliveryAddress>({
     firstName: '',
@@ -44,15 +42,11 @@ const PersonalInfoPage = () => {
   });
   const [errors, setErrors] = useState<Partial<DeliveryAddress>>({});
 
-  // Redirect if cart is empty or no address data
   useEffect(() => {
     if (!loading && (!cart || cart.items.length === 0)) {
-      router.push(`/${params.locale}/cart`);
+      router.push('/cart');
     }
-    if (!loading && !address) {
-      router.push(`/${params.locale}/checkout/personal`);
-    }
-  }, [cart, loading, address, router, params.locale]);
+  }, [cart, loading, router]);
 
   const handleAddressChange = (field: keyof DeliveryAddress, value: string) => {
     setAddress(prev => ({ ...prev, [field]: value }));
@@ -130,7 +124,7 @@ const PersonalInfoPage = () => {
       sessionStorage.setItem('checkoutAddress', JSON.stringify(address));
       
       // Navigate to summary page without address in URL
-      router.push(`/${params.locale}/summary`);
+      router.push('/summary');
     } catch (error) {
       console.error('Error processing address:', error);
       toast.error(t('checkout.errors.tryAgain'));
@@ -164,7 +158,7 @@ const PersonalInfoPage = () => {
         {/* Header */}
         <div className="mb-8 mt-14">
           <div className="flex text-center md:text-left mx-auto items-center justify-between mb-4">
-            <Link className="mx-auto" href={`/${params.locale}/cart`}>
+            <Link className="mx-auto" href="/cart">
               <Button variant="ghost" className="flex text-[20px] text-center items-center md:items-center gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 {t('checkout.backToCart')}

@@ -5,6 +5,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { address } = body;
 
+    if (!address || typeof address !== "object") {
+      return NextResponse.json({ error: "Missing address" }, { status: 400 });
+    }
+
     // Validate required fields
     const requiredFields = ['firstName', 'lastName', 'phone', 'email', 'idNumber', 'streetAddress', 'city', 'postalCode'];
     for (const field of requiredFields) {

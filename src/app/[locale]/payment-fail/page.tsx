@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { XCircle, AlertCircle, RefreshCw, Home, CreditCard } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 
 interface PaymentFailPageProps {
   params: {
@@ -115,14 +115,14 @@ const PaymentFailPage = ({ params }: PaymentFailPageProps) => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href={`/${params.locale}/summary`}>
+              <Link href="/summary">
                 <Button className="w-full sm:w-auto">
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Try Again
                 </Button>
               </Link>
               
-              <Link href={`/${params.locale}`}>
+              <Link href="/">
                 <Button variant="outline" className="w-full sm:w-auto">
                   <Home className="h-4 w-4 mr-2" />
                   Continue Shopping
@@ -142,7 +142,7 @@ const PaymentFailPage = ({ params }: PaymentFailPageProps) => {
                     We&apos;re here to help you complete your purchase.
                   </p>
                   <div className="mt-2">
-                    <Link href={`/${params.locale}/contact`}>
+                    <Link href="/contact">
                       <Button variant="link" className="p-0 h-auto text-blue-600 hover:text-blue-800">
                         Contact Support
                       </Button>

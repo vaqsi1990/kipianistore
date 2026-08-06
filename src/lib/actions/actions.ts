@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../prisma";
 import { ProductSchema, updateProductSchema } from "../validators";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "../auth-helpers";
 
 export async function convertToPlainObject<T>(value: T): Promise<T> {
   return JSON.parse(JSON.stringify(value));
@@ -55,6 +56,7 @@ export async function formatError(error: any) {
 
 export async function createProduct(data: z.infer<typeof ProductSchema>) {
   try {
+    await requireAdmin();
     const product = ProductSchema.parse(data);
 
     const normalizedCategory =
@@ -96,6 +98,7 @@ export async function createProduct(data: z.infer<typeof ProductSchema>) {
 
 export async function deleteProduct(id: string) {
   try {
+    await requireAdmin();
     const productExist = await prisma.product.findFirst({
       where: { id },
     });
@@ -121,6 +124,7 @@ export async function deleteProduct(id: string) {
 
 export async function updateProduct(data: z.infer<typeof updateProductSchema>) {
   try {
+    await requireAdmin();
     const product = updateProductSchema.parse(data);
 
     const productExists = await prisma.product.findFirst({

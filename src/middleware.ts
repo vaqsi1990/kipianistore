@@ -1,28 +1,24 @@
-import { NextResponse } from 'next/server';
-import { NextRequest } from 'next/server';
-import { defineRouting, LocalePrefix } from 'next-intl/routing';
-import createMiddleware from 'next-intl/middleware';
+import { NextRequest, NextResponse } from "next/server";
+import NextAuth from "next-auth";
+import createMiddleware from "next-intl/middleware";
+import { authConfig } from "../auth.config";
+import { routing } from "./i18n/routing";
 
-const routing = defineRouting({
-  locales: ['ka', 'en'],
-  defaultLocale: 'ka',
-});
+const { auth } = NextAuth(authConfig);
+const intlMiddleware = createMiddleware(routing);
 
-export function middleware(request: NextRequest) {
+export default auth((request) => {
   const pathname = request.nextUrl.pathname;
 
-  // გადამისამართება მხოლოდ root ან EN root-ზე
-  if (pathname === '/' ) {
+  if (pathname === "/") {
     const url = request.nextUrl.clone();
-    url.pathname = '/ka';
+    url.pathname = "/ka";
     return NextResponse.redirect(url);
   }
 
-  return createMiddleware(routing)(request);
-}
+  return intlMiddleware(request as NextRequest);
+});
 
 export const config = {
-  matcher: ['/', '/(ka|en)/:path*'],
+  matcher: ["/", "/(ka|en)/:path*"],
 };
-
-

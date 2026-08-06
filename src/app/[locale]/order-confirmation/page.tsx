@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 
 interface OrderConfirmationProps {
   params: {
@@ -27,7 +27,26 @@ const OrderConfirmationPage = ({ params }: OrderConfirmationProps) => {
     
     setOrderStatus(status || 'unknown');
     setOrderId(orderIdParam || '');
-    setLoading(false);
+
+    if (orderIdParam && status === 'success') {
+      fetch(`/api/orders/bog-status/${orderIdParam}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.isPaid) {
+            setOrderStatus('success');
+            sessionStorage.removeItem('pendingPayment');
+            sessionStorage.removeItem('checkoutAddress');
+          } else if (data.success && !data.isPaid) {
+            setOrderStatus('pending');
+          }
+        })
+        .catch(() => {
+          setOrderStatus('unknown');
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
   }, [searchParams]);
 
   const getStatusConfig = (status: string) => {
@@ -40,6 +59,15 @@ const OrderConfirmationPage = ({ params }: OrderConfirmationProps) => {
           color: 'text-green-600',
           bgColor: 'bg-green-50',
           borderColor: 'border-green-500',
+        };
+      case 'pending':
+        return {
+          icon: Clock,
+          title: 'Payment Processing',
+          description: 'Your payment is being processed. We will update your order status shortly.',
+          color: 'text-yellow-600',
+          bgColor: 'bg-yellow-50',
+          borderColor: 'border-yellow-500',
         };
       case 'failed':
         return {
@@ -110,20 +138,20 @@ const OrderConfirmationPage = ({ params }: OrderConfirmationProps) => {
             )}
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href={`/${params.locale}`}>
+              <Link href="/">
                 <Button className="w-full sm:w-auto">
                   Continue Shopping
                 </Button>
               </Link>
               
               {orderStatus === 'failed' || orderStatus === 'cancelled' ? (
-                <Link href={`/${params.locale}/summary`}>
+                <Link href="/summary">
                   <Button variant="outline" className="w-full sm:w-auto">
                     Try Again
                   </Button>
                 </Link>
               ) : (
-                <Link href={`/${params.locale}/profile`}>
+                <Link href="/profile">
                   <Button variant="outline" className="w-full sm:w-auto">
                     View Orders
                   </Button>

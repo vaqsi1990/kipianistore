@@ -15,9 +15,7 @@ import {
   Truck,
   CreditCard,
 } from "lucide-react";
-import { Link } from "@/i18n/navigation";
-import { useRouter } from "next/navigation";
-import { useParams } from "next/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { toast } from "sonner";
 import { useCart } from "@/lib/context/CartContext";
 import Image from "next/image";
@@ -25,7 +23,6 @@ import Image from "next/image";
 const CartPage = () => {
   const t = useTranslations();
   const router = useRouter();
-  const params = useParams();
   const { cart, loading, refreshCart, removeFromCartOptimistic, updateCart } =
     useCart();
   const [updating, setUpdating] = useState<string | null>(null);
@@ -155,7 +152,7 @@ const CartPage = () => {
       toast.error("კალათა ცარიელია");
       return;
     }
-    router.push(`/${params.locale}/checkout/personal`);
+    router.push('/checkout/personal');
   };
 
   const formatPrice = (price: string) => {
@@ -189,10 +186,10 @@ const CartPage = () => {
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-8">
             <ShoppingBag className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-white mb-2">
               {t("cart.empty")}
             </h1>
-            <p className="text-gray-600 mb-8">{t("cart.emptyDescription")}</p>
+            <p className="text-white mb-8">{t("cart.emptyDescription")}</p>
             <Link href="/list">
               <Button
                 variant="outline"

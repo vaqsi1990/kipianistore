@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { MapPin, CreditCard, Truck, ArrowLeft, CheckCircle, Lock } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
-import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
+import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCart } from '@/lib/context/CartContext';
 import Image from 'next/image';
@@ -39,7 +39,7 @@ const SummaryPage = () => {
   const t = useTranslations();
   const router = useRouter();
   const params = useParams();
-  const searchParams = useSearchParams();
+  const locale = (params.locale as string) || 'ka';
   const { cart, loading, updateCart, refreshCart } = useCart();
   const [deliveryOption, setDeliveryOption] = useState('');
   const [address, setAddress] = useState<DeliveryAddress | null>(null);
@@ -57,21 +57,20 @@ const SummaryPage = () => {
         setAddress(decodedAddress);
       } catch (error) {
         console.error('Error parsing address data:', error);
-        router.push(`/${params.locale}/checkout/personal`);
+        router.push('/checkout/personal');
       }
     } else {
-      // No address data found, redirect to personal info page
-      router.push(`/${params.locale}/checkout/personal`);
+      router.push('/checkout/personal');
     }
-  }, [router, params.locale]);
+  }, [router]);
 
   // Redirect if cart is empty
   useEffect(() => {
     if (!loading && (!cart || cart.items.length === 0)) {
 
-      router.push(`/${params.locale}/cart`);
+      router.push('/cart');
     }
-  }, [cart, loading, router, params.locale]);
+  }, [cart, loading, router]);
 
   // Check for pending payment
   useEffect(() => {
@@ -107,15 +106,8 @@ const SummaryPage = () => {
 
     // If credit card payment is selected, handle BOG payment
     if (paymentMethod === 'card') {
-      try {
-        const token = await getToken();
-        await createPaymentOrder(token);
-        return; // Exit early as createPaymentOrder handles the flow
-      } catch (error) {
-        console.error('BOG payment error:', error);
-        toast.error('გადახდის ინიცირება ვერ მოხერხდა');
-        return;
-      }
+      await handleBOGPayment();
+      return;
     }
 
     // For cash on delivery, proceed with normal order creation
@@ -147,7 +139,7 @@ const SummaryPage = () => {
       sessionStorage.removeItem('checkoutAddress');
 
       // Use a more reliable redirect approach
-      const orderConfirmationUrl = `/${params.locale}/order-confirmation?orderId=${data.order.id}`;
+      const orderConfirmationUrl = `/order-confirmation?orderId=${data.order.id}`;
 
       // Redirect immediately without clearing cart first
       window.location.href = orderConfirmationUrl;
@@ -161,7 +153,7 @@ const SummaryPage = () => {
 
   const formatPrice = (price: string) => {
     const numPrice = parseFloat(price);
-    if (params.locale === 'ge') {
+    if (locale === 'ka') {
       return `${numPrice.toFixed(2)} ლარი`;
     } else {
       return `₾${numPrice.toFixed(2)}`;
@@ -219,17 +211,6 @@ const SummaryPage = () => {
     }
   }, [address, availableLocations, deliveryOption]);
 
-  // Cleanup effect to remove address data when component unmounts
-  useEffect(() => {
-    return () => {
-      // Only clean up if order was not placed successfully
-      if (!orderPlaced) {
-        // Keep the address data in sessionStorage for potential back navigation
-        // It will be cleaned up when order is placed successfully
-      }
-    };
-  }, [orderPlaced]);
-
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -251,186 +232,66 @@ const SummaryPage = () => {
   }
 
   if (!cart || cart.items.length === 0 || !address) {
-    return null; // Will redirect
-  }
-  const getToken = async () => {
-    try {
-      // Use the token manager endpoint that handles automatic refresh
-      const res = await fetch('/api/token')
-      const data = await res.json()
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to get token')
-      }
-
-      return data.access_token
-    } catch (error) {
-      console.error('Token error:', error)
-      throw new Error('Failed to get BOG access token')
-    }
-  }
-
-  const createPaymentOrder = async (token: string) => {
-    try {
-      // Calculate delivery price
-      const deliveryPrice = calculateDeliveryPrice(deliveryOption)
-
-      // Calculate total amount
-      const totalAmount = calculateTotalPrice()
-
-      // Prepare order data
-      const orderData = {
-        cart,
-        address,
-        deliveryOption,
-        deliveryPrice,
-        totalAmount,
-        orderId: `order_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
-      }
-
-      const res = await fetch('/api/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token,
-          orderData
-        }),
-      })
-
-      const data = await res.json()
-
-      if (data.success && data.redirectUrl) {
-   
-        window.location.href = data.redirectUrl;
-        
-        // Also store payment info as backup (in case redirect fails)
-        sessionStorage.setItem('pendingPayment', JSON.stringify({
-          redirectUrl: data.redirectUrl,
-          orderId: data.orderId,
-          bogOrderId: data.bogOrderId
-        }));
-      } else {
-        console.error('Payment order creation failed:', data)
-        toast.error(data.error || 'დაფიქსირდა შეცდომა გადახდის დაწყებისას')
-      }
-    } catch (error) {
-      console.error('Payment order creation error:', error)
-      toast.error('გადახდის ინიცირება ვერ მოხერხდა')
-    }
+    return null;
   }
 
   const handlePendingPayment = () => {
     if (pendingPayment?.redirectUrl) {
       window.location.href = pendingPayment.redirectUrl;
     }
-  }
+  };
 
   const clearPendingPayment = () => {
     sessionStorage.removeItem('pendingPayment');
     setPendingPayment(null);
     toast.success('Pending payment cleared');
-  }
+  };
 
   const handleBOGPayment = async () => {
-    if (processing) return; // Prevent multiple clicks
-    
+    if (processing) return;
 
-    
     setProcessing(true);
     try {
-      // Validate required data
       if (!address || !deliveryOption || !cart) {
         toast.error('გთხოვთ შეავსოთ ყველა საჭირო ველი');
-        setProcessing(false);
         return;
       }
 
-      // Calculate delivery price
-      const deliveryPrice = calculateDeliveryPrice(deliveryOption);
-
-      // Calculate total amount
-      const totalAmount = calculateTotalPrice();
-
-      // Prepare order data
       const orderData = {
-        cart,
         address,
         deliveryOption,
-        deliveryPrice,
-        totalAmount,
-        orderId: `order_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
+        deliveryPrice: calculateDeliveryPrice(deliveryOption),
+        totalAmount: calculateTotalPrice(),
+        locale,
       };
 
-  
-      const tokenRes = await fetch('/api/token');
-      const tokenData = await tokenRes.json();
-   
-      
-      if (!tokenRes.ok) {
-        console.error('Token error:', tokenData);
-        toast.error('გადახდის სისტემაში შედის ვერ მოხერხდა. გთხოვთ სცადოთ მოგვიანებით.');
-        setProcessing(false);
-        return;
-      }
-
-      const { access_token } = tokenData;
-  
-      
       const orderRes = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          token: access_token,
-          orderData: orderData
-        }),
+        body: JSON.stringify({ orderData }),
       });
-      
-      console.log('=== ORDER CREATION RESPONSE ===');
-      console.log('Response status:', orderRes.status);
-      console.log('Response ok:', orderRes.ok);
 
       const orderDataResponse = await orderRes.json();
 
       if (!orderRes.ok) {
-        console.error('=== ORDER CREATION ERROR ===');
-        console.error('Response status:', orderRes.status);
-        console.error('Response data:', orderDataResponse);
-        console.error('Error details:', orderDataResponse.details);
-        console.error('Timestamp:', orderDataResponse.timestamp);
-        console.error('============================');
-        
-        // Show more detailed error message
-        const errorMessage = orderDataResponse.error || 'შეკვეთის შექმნა ვერ მოხერხდა';
-        toast.error(errorMessage);
-        console.error('Order creation failed:', orderDataResponse);
-        setProcessing(false);
+        toast.error(orderDataResponse.error || 'შეკვეთის შექმნა ვერ მოხერხდა');
         return;
       }
 
       if (orderDataResponse.success && orderDataResponse.redirectUrl) {
-        console.log('Payment order created successfully:', orderDataResponse);
-        
-        // Cart will be cleared automatically in the backend after order creation
-        console.log('BOG order created successfully, cart will be cleared automatically');
-        
-        // Automatically redirect to BOG payment page without confirmation
-        console.log('Redirecting to BOG payment page:', orderDataResponse.redirectUrl);
+        sessionStorage.setItem(
+          'pendingPayment',
+          JSON.stringify({
+            redirectUrl: orderDataResponse.redirectUrl,
+            orderId: orderDataResponse.orderId,
+            bogOrderId: orderDataResponse.bogOrderId,
+          })
+        );
         window.location.href = orderDataResponse.redirectUrl;
-        
-        // Also store payment info as backup (in case redirect fails)
-        sessionStorage.setItem('pendingPayment', JSON.stringify({
-          redirectUrl: orderDataResponse.redirectUrl,
-          orderId: orderDataResponse.orderId,
-          bogOrderId: orderDataResponse.bogOrderId
-        }));
       } else {
-        console.error('Payment order creation failed:', orderDataResponse);
         toast.error(orderDataResponse.error || 'დაფიქსირდა შეცდომა გადახდის დაწყებისას');
-        setProcessing(false);
-        return;
       }
-    } catch (error) {
-      console.error('Payment error:', error);
+    } catch {
       toast.error('გადახდის პროცესში შეცდომა მოხდა. გთხოვთ სცადოთ მოგვიანებით.');
     } finally {
       setProcessing(false);

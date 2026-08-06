@@ -14,7 +14,7 @@ import Image from 'next/image';
 
 const languages = [
   {
-    code: 'ge',
+    code: 'ka',
     label: 'ქართული',
     flag: '/Georgia.png',
   },

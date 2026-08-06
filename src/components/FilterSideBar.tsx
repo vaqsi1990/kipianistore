@@ -83,7 +83,7 @@ export default function FilterSidebar({ onFilterChange }: FilterSidebarProps) {
       
       'pillow': { en: 'Pillow', ge: 'ბალიში' },
       'mattress': { en: 'Mattress', ge: 'მატრასი' },
-      'bed': { en: 'Bed', ge: 'ლოგინი' },
+      'bed': { en: 'Bed', ge: 'საწოლი' },
       'quilt': { en: 'Quilt', ge: 'საბანი' },
       'OTHERS': { en: 'Others', ge: 'სხვა' }
     };

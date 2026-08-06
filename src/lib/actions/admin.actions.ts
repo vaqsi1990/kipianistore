@@ -1,5 +1,6 @@
 import { auth } from "../../../auth";
 import { prisma } from "../prisma";
+import { bogTokenManager } from "../bog-token";
 
 export async function refreshAllBOGOrderStatuses() {
   try {
@@ -15,6 +16,7 @@ export async function refreshAllBOGOrderStatuses() {
       },
       select: {
         id: true,
+        bogOrderId: true,
         paymentMethod: true,
         isPaid: true,
         isDelivered: true,
@@ -32,25 +34,17 @@ export async function refreshAllBOGOrderStatuses() {
 
     for (const order of bogOrders) {
       try {
-        // Get BOG token
-        const tokenRes = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/token`);
-        const tokenData = await tokenRes.json();
-        
-        if (!tokenData.access_token) {
-        
-          errorCount++;
-          continue;
-        }
+        const access_token = await bogTokenManager.getValidToken();
 
-        // Fetch BOG receipt
+        const bogApiOrderId = order.bogOrderId || order.id;
         const bogResponse = await fetch(
-          `https://api.bog.ge/payments/v1/receipt/${order.id}`,
+          `https://api.bog.ge/payments/v1/receipt/${bogApiOrderId}`,
           {
             headers: {
-              Authorization: `Bearer ${tokenData.access_token}`,
-              'Accept-Language': 'ka',
-              'Content-Type': 'application/json'
-            }
+              Authorization: `Bearer ${access_token}`,
+              "Accept-Language": "ka",
+              "Content-Type": "application/json",
+            },
           }
         );
 
@@ -63,7 +57,7 @@ export async function refreshAllBOGOrderStatuses() {
           let paidAt = null;
           let paymentResult = null;
 
-          if (bogData.order_status?.key === 'completed') {
+          if (bogData.order_status?.key === 'completed' || bogData.order_status?.key === 'blocked' || bogData.order_status?.key === 'partial_completed') {
             isPaid = true;
             paidAt = new Date();
             isDelivered = false;

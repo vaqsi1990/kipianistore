@@ -30,6 +30,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const qty = quantity ?? 1;
+    if (!Number.isInteger(qty) || qty <= 0) {
+      return NextResponse.json(
+        { error: 'Quantity must be a positive integer' },
+        { status: 400 }
+      );
+    }
+
     // Get or create session cart ID
     const cookieStore = await cookies();
     let sessionCartId = cookieStore.get('sessionCartId')?.value;
@@ -112,14 +120,14 @@ export async function POST(request: NextRequest) {
     if (existingItemIndex >= 0) {
       // Update existing item quantity
       updatedItems = [...existingItems];
-      updatedItems[existingItemIndex].qty += quantity || 1;
+      updatedItems[existingItemIndex].qty += qty;
     } else {
       // Add new item
       const newItem: CartItem = {
         productId,
         name: product.title,
         size: product.category === "OTHERS" ? "N/A" : size, // Use "N/A" for OTHERS products
-        qty: quantity || 1,
+        qty: qty,
         image: product.images[0],
         price: finalPrice.toFixed(2),
       };

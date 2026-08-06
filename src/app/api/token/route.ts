@@ -1,51 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { bogTokenManager } from '@/lib/bog-token';
+import { NextResponse } from "next/server";
+import { auth } from "../../../../auth";
+import { bogTokenManager } from "@/lib/bog-token";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    console.log('🔑 BOG Token Request - Using Token Manager');
-    
-    // Get token info for debugging
-    const tokenInfo = bogTokenManager.getTokenInfo();
-    console.log('Current token info:', tokenInfo);
-    
-    // Get a valid token (automatically refreshes if expired)
-    const access_token = await bogTokenManager.getValidToken();
-    
-    // Get updated token info
-    const updatedTokenInfo = bogTokenManager.getTokenInfo();
-    
-    console.log('✅ Token retrieved successfully');
-    console.log('Updated token info:', updatedTokenInfo);
-    
-    return NextResponse.json({
-      access_token,
-      token_type: 'Bearer',
-      expires_in: updatedTokenInfo.timeUntilExpiry ? Math.floor(updatedTokenInfo.timeUntilExpiry / 1000) : 0,
-      success: true,
-      token_info: updatedTokenInfo,
-    });
-  } catch (error: any) {
-    console.error('❌ BOG Token error:', error);
-    
-    let errorMessage = 'Failed to get BOG access token';
-    let errorDetails = error.message || 'Unknown error occurred';
-    
-    if (error.message.includes('Missing BOG credentials')) {
-      errorMessage = 'Missing BOG credentials';
-      errorDetails = 'BOG_CLIENT_ID and BOG_CLIENT_SECRET must be set in environment variables';
-    } else if (error.message.includes('unauthorized_client')) {
-      errorMessage = 'Invalid BOG credentials';
-      errorDetails = 'Please check your BOG_CLIENT_ID and BOG_CLIENT_SECRET. Make sure they are correct and match your BOG application registration.';
+    const session = await auth();
+    if (!session?.user?.id || session.user.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    return NextResponse.json(
-      {
-        error: errorMessage,
-        details: errorDetails,
-        status: 500,
-      },
-      { status: 500 }
-    );
+    const access_token = await bogTokenManager.getValidToken();
+    const tokenInfo = bogTokenManager.getTokenInfo();
+
+    return NextResponse.json({
+      access_token,
+      token_type: "Bearer",
+      expires_in: tokenInfo.timeUntilExpiry
+        ? Math.floor(tokenInfo.timeUntilExpiry / 1000)
+        : 0,
+      success: true,
+    });
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Failed to get BOG access token";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

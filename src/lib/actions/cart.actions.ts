@@ -4,30 +4,26 @@ import { prisma } from "../prisma";
 import { convertToPlainObject } from "../utils";
 import { CartItem } from "../types";
 import { Prisma } from "@prisma/client";
+import { getCartForUser } from "../cart-helpers";
 
 export async function getMyCart() {
-  
-    // Check for cart cookie
     const sessionCartId = (await cookies()).get('sessionCartId')?.value;
-
-    
-    // Get session and user ID
     const session = await auth();
     const userId = session?.user?.id ? (session.user.id as string) : undefined;
-   
-  
-    // If no session cart ID and no user ID, return undefined (no cart)
+
     if (!sessionCartId && !userId) {
-    
       return undefined;
     }
-  
-    // Get user cart from database
-    const cart = await prisma.cart.findFirst({
-      where: userId ? { userId: userId } : { sessionCartId: sessionCartId },
-    });
-   
-  
+
+    let cart;
+    if (userId) {
+      cart = await getCartForUser(userId);
+    } else if (sessionCartId) {
+      cart = await prisma.cart.findFirst({
+        where: { sessionCartId },
+      });
+    }
+
     if (!cart) return undefined;
 
     // Get cart items with location information

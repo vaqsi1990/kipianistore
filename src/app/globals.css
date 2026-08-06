@@ -24,7 +24,7 @@ body {
 }
 
 /* Ensure proper font rendering for Georgian characters */
-[lang="ge"] {
+[lang="ka"] {
   font-family: 'Manrope', 'Noto Sans Georgian', 'DejaVu Sans', sans-serif;
   font-weight: 600;
   -webkit-font-smoothing: antialiased;
@@ -32,7 +32,7 @@ body {
 }
 
 /* Override font-bold for Georgian text to use font-semibold instead */
-[lang="ge"] .font-bold {
+[lang="ka"] .font-bold {
   font-weight: 600 !important;
 }
 

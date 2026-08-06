@@ -107,7 +107,7 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
     }
   }
   
-  const resetUrl = `${baseUrl}/ge/reset-password?token=${token}`;
+  const resetUrl = `${baseUrl}/ka/reset-password?token=${token}`;
 
   const mailOptions = {
     from: {
