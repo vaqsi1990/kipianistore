@@ -56,8 +56,10 @@ function ProductHelper({ items, sliderId }: ProductListProps) {
                     src={item.image[0]}
                     alt={getLocalizedTitle(item, locale)}
                     fill
+                    sizes="(max-width: 768px) 100vw, 20vw"
                     className="object-cover"
-                    unoptimized
+                    loading="lazy"
+                    quality={75}
                   />
                 </div>
               </Link>
@@ -117,8 +119,10 @@ function ProductHelper({ items, sliderId }: ProductListProps) {
                         src={item.image[0]}
                         alt={getLocalizedTitle(item, locale)}
                         fill
+                        sizes="100vw"
                         className="object-cover"
-                        unoptimized
+                        loading="lazy"
+                        quality={75}
                       />
                     </div>
                   </Link>

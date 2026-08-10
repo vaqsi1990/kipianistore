@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 export default function ListPage() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<any[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string>("");
   const [selectedBrand, setSelectedBrand] = useState<string>("");
@@ -42,6 +43,9 @@ export default function ListPage() {
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
+        const pageFromUrl = Number(searchParams.get("page")) || 1;
+        setCurrentPage(pageFromUrl);
+
         const filters = {
           category: searchParams.get("cat") || undefined,
           brands: searchParams.get("brand")
@@ -59,17 +63,12 @@ export default function ListPage() {
               : searchParams.get("inStock") === "false"
                 ? false
                 : undefined,
-          comingSoon:
-            searchParams.get("comingSoon") === "true"
-              ? true
-              : searchParams.get("comingSoon") === "false"
-                ? false
-                : undefined,
           query: searchParams.get("query") || undefined,
         };
 
-        const res = await getAllProducts(1, 200, false, filters); // მოვიტანოთ მეტი, მერე slice ვუკეთოთ
+        const res = await getAllProducts(pageFromUrl, itemsPerPage, false, filters);
         setProducts(res.products || []);
+        setTotalProducts(res.total || 0);
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {
@@ -78,7 +77,7 @@ export default function ListPage() {
     };
 
     fetchProducts();
-  }, [searchParams]);
+  }, [searchParams, itemsPerPage]);
 
   const getPageTitle = () => {
     const query = searchParams.get("query");
@@ -153,10 +152,8 @@ export default function ListPage() {
     setIsMobileFilterOpen(false);
   };
   // pagination
-  const totalPages = Math.ceil(transformedProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProducts = transformedProducts.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(totalProducts / itemsPerPage);
+  const currentProducts = transformedProducts;
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -309,7 +306,7 @@ export default function ListPage() {
               <p className="text-gray-600 text-[18px]">
                 {t("found")}{" "}
                 <span className="font-bold text-gray-900 text-[18px]">
-                  {filteredProducts.length}
+                  {totalProducts}
                 </span>{" "}
                 {t("products")}
               </p>
@@ -369,7 +366,7 @@ export default function ListPage() {
 
           {/* Products Section */}
           <div className="flex-1">
-            {filteredProducts.length > 0 ? (
+            {currentProducts.length > 0 ? (
               <>
                 <ProductHelper items={currentProducts} sliderId="list" />
 

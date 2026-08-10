@@ -68,76 +68,36 @@ function ProductList({
   const locale = params.locale as string;
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [imagesLoaded, setImagesLoaded] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [total, setTotal] = useState(0);
   const [activeTab, setActiveTab] = useState("new");
-
-  // New filter state for FilterSidebar
-  const [filterState, setFilterState] = useState({
-    selectedCategories: [] as string[],
-    selectedBrands: [] as string[],
-    priceRange: { min: 0, max: 1000 },
-  });
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const { products: newProducts, total: totalCount } = await getAllProducts(page, 20);
-        // The data is already converted to numbers by the server action
-        const productsWithPrices = newProducts.map((product: any) => ({
-          ...product,
-          price: product.price || undefined,
-          minSizePrice: product.minSizePrice || undefined,
-          sales: product.sales || undefined,
-          sizes: product.sizes || [],
-        }));
-        if (page === 1) {
-          setProducts(productsWithPrices as Product[]);
-        } else {
-          setProducts((prev) => [...prev, ...productsWithPrices]);
-        }
-        setTotal(totalCount);
-        setHasMore((page * 20) < totalCount);
-        setImagesLoaded(true);
+        const { products: fetchedProducts } = await getAllProducts(1, 60);
+        setProducts(
+          fetchedProducts.map((product: any) => ({
+            ...product,
+            price: product.price || undefined,
+            minSizePrice: product.minSizePrice || undefined,
+            sales: product.sales || undefined,
+            sizes: product.sizes || [],
+          })) as Product[]
+        );
       } catch (error) {
         console.error("Error fetching products:", error);
-        setImagesLoaded(true); // Still set to true to show content
       } finally {
         setLoading(false);
       }
     };
-    fetchProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
 
-  // Fetch all products for popular and sales tabs
-  useEffect(() => {
-    const fetchAllProducts = async () => {
-      try {
-        const { products: allProducts } = await getAllProducts(1, 20, true);
-        const productsWithPrices = allProducts.map((product: any) => ({
-          ...product,
-          price: product.price || undefined,
-          minSizePrice: product.minSizePrice || undefined,
-          sales: product.sales || undefined,
-          sizes: product.sizes || [],
-        }));
-        setProducts(productsWithPrices as Product[]);
-      } catch (error) {
-        console.error("Error fetching all products:", error);
-      }
-    };
-    fetchAllProducts();
+    fetchProducts();
   }, []);
 
-  const handleLoadMore = () => {
-    setPage((prev) => prev + 1);
-  };
-
   const getProductPriceRange = useCallback((product: Product) => {
+    if (product.minSizePrice !== undefined) {
+      return { min: product.minSizePrice, max: product.minSizePrice };
+    }
     if (product.sizes && product.sizes.length > 0) {
       const prices = product.sizes.map((s) => s.price);
       return {
@@ -161,16 +121,12 @@ function ProductList({
     [locale]
   );
 
-  // Updated filter function to work with both old and new filter interfaces
   const getFilteredProducts = useCallback(() => {
-
-
     return products.filter((product) => {
       const byLegacyType =
         !selectedType ||
         product.category.toLowerCase() === selectedType.toLowerCase();
 
-      // Handle brand filtering for OTHERS products (they don't have brands)
       const byLegacyBrand =
         !selectedBrand ||
         (product.category === "OTHERS"
@@ -183,32 +139,11 @@ function ProductList({
       const byLegacyMaxPrice =
         selectedPrice.max === null || priceRange.min <= selectedPrice.max;
 
-      // New filter support
-      const byNewType =
-        filterState.selectedCategories.length === 0 ||
-        filterState.selectedCategories.includes(product.category);
-
-      // Handle brand filtering for OTHERS products in new filter system
-      const byNewBrand =
-        filterState.selectedBrands.length === 0 ||
-        (product.category === "OTHERS"
-          ? true
-          : filterState.selectedBrands.includes(product.brand));
-
-      const byNewMinPrice = priceRange.max >= filterState.priceRange.min;
-      const byNewMaxPrice = priceRange.min <= filterState.priceRange.max;
-
-
-
       return (
         byLegacyType &&
         byLegacyBrand &&
         byLegacyMinPrice &&
-        byLegacyMaxPrice &&
-        byNewType &&
-        byNewBrand &&
-        byNewMinPrice &&
-        byNewMaxPrice
+        byLegacyMaxPrice
       );
     });
   }, [
@@ -216,7 +151,6 @@ function ProductList({
     selectedType,
     selectedBrand,
     selectedPrice,
-    filterState,
     getProductPriceRange,
   ]);
 
@@ -388,7 +322,7 @@ function ProductList({
           </div>
 
           {/* Tab Content */}
-                     {loading || !imagesLoaded ? (
+                     {loading ? (
              // Skeleton Loading State
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                {Array.from({ length: 10 }).map((_, index) => (

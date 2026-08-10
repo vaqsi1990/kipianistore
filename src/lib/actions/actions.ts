@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../prisma";
 import { ProductSchema, updateProductSchema } from "../validators";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { requireAdmin } from "../auth-helpers";
 import { cookies } from "next/headers";
 import { syncProductStores } from "./store.actions";
@@ -106,6 +106,7 @@ export async function createProduct(data: z.infer<typeof ProductSchema>) {
     }
 
     revalidatePath("/admin");
+    revalidateTag("products");
 
     return { success: true, message: "Product created successfully" };
   } catch (error) {
@@ -128,6 +129,7 @@ export async function deleteProduct(id: string) {
     });
 
     revalidatePath("/admin/products");
+    revalidateTag("products");
     return {
       success: true,
       message: "deleted",
@@ -198,6 +200,7 @@ export async function updateProduct(data: z.infer<typeof updateProductSchema>) {
     }
 
     revalidatePath("/admin/products");
+    revalidateTag("products");
 
     return {
       success: true,
@@ -209,118 +212,168 @@ export async function updateProduct(data: z.infer<typeof updateProductSchema>) {
   }
 }
 
+export async function getProductCategories() {
+  const rows = await prisma.product.findMany({
+    distinct: ["category"],
+    select: { category: true },
+    orderBy: { category: "asc" },
+  });
+  return rows.map((row) => row.category);
+}
+
+async function fetchProductsFromDb(
+  page: number,
+  pageSize: number,
+  getAll: boolean,
+  filters: Record<string, unknown> | undefined,
+  selectedStore: string
+) {
+  const where: Record<string, unknown> = {};
+
+  if (selectedStore && selectedStore !== "all") {
+    where.stores = {
+      some: {
+        store: {
+          slug: selectedStore,
+          isActive: true,
+        },
+        stock: { gt: 0 },
+      },
+    };
+  } else if (filters?.inStock === true) {
+    where.stores = {
+      some: {
+        stock: { gt: 0 },
+      },
+    };
+  }
+
+  if (filters?.category) {
+    where.category = String(filters.category).toUpperCase();
+  }
+
+  if (filters?.brands && Array.isArray(filters.brands) && filters.brands.length > 0) {
+    where.brand = { in: filters.brands };
+  }
+
+  if (filters?.minPrice || filters?.maxPrice) {
+    where.OR = [
+      {
+        price: {
+          gte: Number(filters.minPrice) || 0,
+          lte: Number(filters.maxPrice) || 999999,
+        },
+      },
+      {
+        sizes: {
+          some: {
+            price: {
+              gte: Number(filters.minPrice) || 0,
+              lte: Number(filters.maxPrice) || 999999,
+            },
+          },
+        },
+      },
+    ];
+  }
+
+  if (filters?.query) {
+    where.OR = [
+      { title: { contains: String(filters.query), mode: "insensitive" } },
+      { titleEn: { contains: String(filters.query), mode: "insensitive" } },
+      { brand: { contains: String(filters.query), mode: "insensitive" } },
+    ];
+  }
+
+  if (filters?.popular === true) {
+    where.popular = true;
+  }
+
+  if (filters?.onSale === true) {
+    where.sales = { gt: 0 };
+  }
+
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      skip: getAll ? 0 : (page - 1) * pageSize,
+      take: getAll ? undefined : pageSize,
+      select: {
+        id: true,
+        title: true,
+        titleEn: true,
+        category: true,
+        images: true,
+        brand: true,
+        price: true,
+        sales: true,
+        popular: true,
+        createdAt: true,
+        sizes: {
+          select: { price: true },
+          orderBy: { price: "asc" },
+          take: 1,
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  const productsWithMinPrice = products.map((product) => {
+    const minSizePrice = product.sizes[0]
+      ? Number(product.sizes[0].price)
+      : undefined;
+
+    return {
+      id: product.id,
+      title: product.title,
+      titleEn: product.titleEn,
+      category: product.category,
+      images: product.images,
+      brand: product.brand,
+      price: product.price ? Number(product.price) : undefined,
+      sales: product.sales ?? undefined,
+      popular: product.popular,
+      createdAt: product.createdAt,
+      minSizePrice,
+      sizes: product.sizes.map((size) => ({
+        price: Number(size.price),
+      })),
+    };
+  });
+
+  return { products: productsWithMinPrice, total };
+}
+
+const getCachedProducts = unstable_cache(
+  async (
+    page: number,
+    pageSize: number,
+    filtersKey: string,
+    selectedStore: string
+  ) => {
+    const filters = filtersKey ? JSON.parse(filtersKey) : undefined;
+    return fetchProductsFromDb(page, pageSize, false, filters, selectedStore);
+  },
+  ["products-list"],
+  { revalidate: 120, tags: ["products"] }
+);
+
 export async function getAllProducts(page = 1, pageSize = 20, getAll = false, filters?: any) {
   try {
       const cookieStore = await cookies();
       const selectedStore =
         filters?.storeSlug ||
-        cookieStore.get("selectedStore")?.value;
+        cookieStore.get("selectedStore")?.value ||
+        "all";
 
-      const where: any = {};
-
-      if (selectedStore && selectedStore !== "all") {
-        where.stores = {
-          some: {
-            store: {
-              slug: selectedStore,
-              isActive: true,
-            },
-            stock: { gt: 0 },
-          },
-        };
-      } else if (filters?.inStock === true) {
-        where.stores = {
-          some: {
-            stock: { gt: 0 },
-          },
-        };
-      }
-      
-      if (filters?.category) {
-        where.category = filters.category.toUpperCase();
-      }
-      
-      if (filters?.brands && filters.brands.length > 0) {
-        where.brand = { in: filters.brands };
-      }
-      
-      if (filters?.minPrice || filters?.maxPrice) {
-        where.OR = [
-          { price: { gte: filters.minPrice || 0, lte: filters.maxPrice || 999999 } },
-          { sizes: { some: { price: { gte: filters.minPrice || 0, lte: filters.maxPrice || 999999 } } } }
-        ];
-      }
-      
-      if (filters?.query) {
-        where.OR = [
-          { title: { contains: filters.query, mode: 'insensitive' } },
-          { titleEn: { contains: filters.query, mode: 'insensitive' } },
-          { brand: { contains: filters.query, mode: 'insensitive' } }
-        ];
+      if (getAll) {
+        return fetchProductsFromDb(page, pageSize, true, filters, selectedStore);
       }
 
-      const [products, total] = await Promise.all([
-        prisma.product.findMany({
-          where,
-          skip: getAll ? 0 : (page - 1) * pageSize,
-          take: getAll ? undefined : pageSize,
-          select: {
-            id: true,
-            title: true,
-            titleEn: true,
-            category: true,
-            images: true,
-            brand: true,
-            price: true,
-            sales: true,
-            popular: true,
-            createdAt: true,
-            sizes: {
-              select: {
-                price: true,
-              },
-            },
-            stores: {
-              include: {
-                store: {
-                  select: {
-                    id: true,
-                    slug: true,
-                    nameKa: true,
-                    nameEn: true,
-                    address: true,
-                    city: true,
-                  },
-                },
-              },
-            },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.product.count({ where }),
-      ]);
-
-    // For each product, calculate the minimum size price if sizes exist
-    const productsWithMinPrice = products.map((product) => {
-      let minSizePrice = undefined;
-      if (product.sizes && product.sizes.length > 0) {
-        minSizePrice = product.sizes
-          .map((s) => Number(s.price))
-          .reduce((min, p) => (p < min ? p : min), Infinity);
-      }
-      return {
-        ...product,
-        price: product.price ? Number(product.price) : undefined,
-        minSizePrice: minSizePrice !== Infinity ? minSizePrice : undefined,
-        storeSlugs: getProductStoreSlugs(product),
-        sizes: product.sizes?.map(size => ({
-          ...size,
-          price: Number(size.price)
-        })) || []
-      };
-    });
-
-    return { products: productsWithMinPrice, total };
+      const filtersKey = filters ? JSON.stringify(filters) : "";
+      return getCachedProducts(page, pageSize, filtersKey, selectedStore);
   } catch (error) {
     console.error("Error fetching products:", error);
     return { products: [], total: 0 };

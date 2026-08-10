@@ -8,7 +8,14 @@ const nextConfig = {
         hostname: "utfs.io",
         pathname: "/f/**", 
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
     ],
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86400,
   },
   webpack: (config, { isServer }) => {
     // Handle node: protocol imports
