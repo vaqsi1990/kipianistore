@@ -26,7 +26,13 @@ async function page(props: {
   const session = await auth();
 
   if (session) {
-    return redirect(callbackUrl || "/");
+    const safeTarget =
+      callbackUrl &&
+      !callbackUrl.includes("/sign-in") &&
+      callbackUrl.startsWith("/")
+        ? callbackUrl
+        : "/";
+    return redirect(safeTarget);
   }
 
   return <SignInClient callbackUrl={callbackUrl} />;
