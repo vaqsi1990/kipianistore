@@ -16,12 +16,10 @@ DATABASE_URL="postgresql://username:password@localhost:5432/furniture"
 NEXTAUTH_SECRET=your_nextauth_secret_here
 NEXTAUTH_URL=http://localhost:3000
 
-# Email (for verification)
-EMAIL_SERVER_HOST=smtp.gmail.com
-EMAIL_SERVER_PORT=587
-EMAIL_SERVER_USER=your_email@gmail.com
-EMAIL_SERVER_PASSWORD=your_app_password_here
-EMAIL_FROM=noreply@yourdomain.com
+# Email (Resend)
+RESEND_API_KEY=re_xxxxxxxx
+EMAIL_FROM="Kipiani Store <noreply@yourdomain.com>"
+ADMIN_EMAIL=kipianistore@gmail.com
 ```
 
 ## Getting BOG Credentials

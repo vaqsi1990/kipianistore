@@ -1,65 +1,56 @@
-import nodemailer from 'nodemailer';
-import { resolveDeliveryLocationLabel } from '@/lib/cart-helpers';
+import { Resend } from "resend";
+import { resolveDeliveryLocationLabel } from "@/lib/cart-helpers";
 
-// Create a transporter using SMTP with improved configuration
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-  // Add these settings to improve deliverability
-  pool: true,
-  maxConnections: 1,
-  maxMessages: 3,
-  rateLimit: 3,
-  // Add DKIM and SPF support
-  dkim: {
-    domainName: process.env.DOMAIN_NAME || 'yourdomain.com',
-    keySelector: 'default',
-    privateKey: process.env.DKIM_PRIVATE_KEY || '',
-    headerFieldNames: 'to:from:subject:date',
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const FROM_EMAIL =
+  process.env.EMAIL_FROM || "Kipiani Store <onboarding@resend.dev>";
+const ADMIN_EMAIL =
+  process.env.ADMIN_EMAIL || "kipianistore@gmail.com";
+const BRAND = "Kipiani Store";
+
+function getBaseUrl() {
+  if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
+
+async function sendEmail(options: {
+  to: string | string[];
+  subject: string;
+  html: string;
+  replyTo?: string;
+}) {
+  if (!process.env.RESEND_API_KEY) {
+    console.error("RESEND_API_KEY is not set");
+    return { success: false as const, error: "Email service is not configured" };
+  }
+
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: options.to,
+    subject: options.subject,
+    html: options.html,
+    replyTo: options.replyTo,
+  });
+
+  if (error) {
+    console.error("Resend error:", error);
+    return { success: false as const, error: error.message };
+  }
+
+  return { success: true as const, id: data?.id };
+}
 
 export const sendVerificationEmail = async (email: string, token: string) => {
-  // Use dynamic URL that works on both development and Vercel
-  let baseUrl = process.env.NEXTAUTH_URL;
-  
-  if (!baseUrl) {
-    // On Vercel, VERCEL_URL is provided without protocol
-    if (process.env.VERCEL_URL) {
-      baseUrl = `https://${process.env.VERCEL_URL}`;
-    } else {
-      // Fallback for local development
-      baseUrl = 'http://localhost:3000';
-    }
-  }
-  
-  const verificationUrl = `${baseUrl}/en/verify-email?token=${token}`;
+  const verificationUrl = `${getBaseUrl()}/en/verify-email?token=${token}`;
 
-  const mailOptions = {
-    from: {
-      name: 'Furniture Store',
-      address: process.env.EMAIL_USER || 'noreply@yourdomain.com'
-    },
+  const result = await sendEmail({
     to: email,
-    subject: 'Verify your email address',
-    // Add headers to prevent replies and improve deliverability
-    headers: {
-      'X-Auto-Response-Suppress': 'OOF, AutoReply',
-      'Precedence': 'bulk',
-      'X-Mailer': 'Furniture Store Email System',
-      'List-Unsubscribe': `<mailto:${process.env.EMAIL_USER}?subject=unsubscribe>`,
-      'Feedback-ID': 'verification:furniturestore',
-    },
-    // Add message ID for better tracking
-    messageId: `<verification-${Date.now()}@${process.env.DOMAIN_NAME || 'furniturestore.com'}>`,
-    // Set reply-to to prevent replies
-    replyTo: 'noreply@furniturestore.com',
+    subject: "Verify your email address",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Welcome to Furniture Store!</h2>
+        <h2 style="color: #333;">Welcome to ${BRAND}!</h2>
         <p>Thank you for signing up. Please verify your email address by clicking the button below:</p>
         
         <div style="text-align: center; margin: 30px 0;">
@@ -78,57 +69,25 @@ export const sendVerificationEmail = async (email: string, token: string) => {
         
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
         <p style="color: #666; font-size: 12px;">
-          This is an automated email from Furniture Store. Please do not reply to this email.
+          This is an automated email from ${BRAND}. Please do not reply to this email.
           <br>If you need assistance, please contact our support team through our website.
         </p>
       </div>
     `,
-  };
+  });
 
-  try {
-    await transporter.sendMail(mailOptions);
-    return { success: true };
-  } catch (error) {
-    console.error('Error sending email:', error);
-    return { success: false, error: 'Failed to send verification email' };
+  if (!result.success) {
+    return { success: false, error: "Failed to send verification email" };
   }
+  return { success: true };
 };
 
 export const sendPasswordResetEmail = async (email: string, token: string) => {
-  // Use dynamic URL that works on both development and Vercel
-  let baseUrl = process.env.NEXTAUTH_URL;
-  
-  if (!baseUrl) {
-    // On Vercel, VERCEL_URL is provided without protocol
-    if (process.env.VERCEL_URL) {
-      baseUrl = `https://${process.env.VERCEL_URL}`;
-    } else {
-      // Fallback for local development
-      baseUrl = 'http://localhost:3000';
-    }
-  }
-  
-  const resetUrl = `${baseUrl}/ka/reset-password?token=${token}`;
+  const resetUrl = `${getBaseUrl()}/ka/reset-password?token=${token}`;
 
-  const mailOptions = {
-    from: {
-      name: 'Furniture Store',
-      address: process.env.EMAIL_USER || 'noreply@yourdomain.com'
-    },
+  const result = await sendEmail({
     to: email,
-    subject: 'Reset your password',
-    // Add headers to prevent replies and improve deliverability
-    headers: {
-      'X-Auto-Response-Suppress': 'OOF, AutoReply',
-      'Precedence': 'bulk',
-      'X-Mailer': 'Furniture Store Email System',
-      'List-Unsubscribe': `<mailto:${process.env.EMAIL_USER}?subject=unsubscribe>`,
-      'Feedback-ID': 'password-reset:furniturestore',
-    },
-    // Add message ID for better tracking
-    messageId: `<password-reset-${Date.now()}@${process.env.DOMAIN_NAME || 'furniturestore.com'}>`,
-    // Set reply-to to prevent replies
-    replyTo: 'noreply@furniturestore.com',
+    subject: "Reset your password",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #333;">Password Reset Request</h2>
@@ -150,31 +109,36 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
         
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
         <p style="color: #666; font-size: 12px;">
-          This is an automated email from Furniture Store. Please do not reply to this email.
+          This is an automated email from ${BRAND}. Please do not reply to this email.
           <br>If you need assistance, please contact our support team through our website.
         </p>
       </div>
     `,
-  };
+  });
 
-  try {
-    await transporter.sendMail(mailOptions);
-    return { success: true };
-  } catch (error) {
-    console.error('Error sending email:', error);
-    return { success: false, error: 'Failed to send password reset email' };
+  if (!result.success) {
+    return { success: false, error: "Failed to send password reset email" };
   }
+  return { success: true };
 };
 
 const getDeliveryLocationText = async (deliveryLocation: string) => {
-  return resolveDeliveryLocationLabel(deliveryLocation, 'en');
+  return resolveDeliveryLocationLabel(deliveryLocation, "en");
 };
 
-export const sendOrderReceipt = async (email: string, order: any, customerName: string) => {
+export const sendOrderReceipt = async (
+  email: string,
+  order: any,
+  customerName: string
+) => {
   const formatPrice = (price: number) => `₾${price.toFixed(2)}`;
-  const deliveryLocationText = await getDeliveryLocationText(order.deliveryLocation);
-  
-  const orderItemsHtml = order.orderitems.map((item: any) => `
+  const deliveryLocationText = await getDeliveryLocationText(
+    order.deliveryLocation
+  );
+
+  const orderItemsHtml = order.orderitems
+    .map(
+      (item: any) => `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #eee;">
         <div style="display: flex; align-items: center;">
@@ -189,32 +153,18 @@ export const sendOrderReceipt = async (email: string, order: any, customerName: 
         ${formatPrice(item.price * item.qty)}
       </td>
     </tr>
-  `).join('');
+  `
+    )
+    .join("");
 
-  const mailOptions = {
-    from: {
-      name: 'Furniture Store',
-      address: process.env.EMAIL_USER || 'noreply@yourdomain.com'
-    },
+  const result = await sendEmail({
     to: email,
     subject: `Order Confirmation #${order.id}`,
-    // Add headers to prevent replies and improve deliverability
-    headers: {
-      'X-Auto-Response-Suppress': 'OOF, AutoReply',
-      'Precedence': 'bulk',
-      'X-Mailer': 'Furniture Store Email System',
-      'List-Unsubscribe': `<mailto:${process.env.EMAIL_USER}?subject=unsubscribe>`,
-      'Feedback-ID': 'order-receipt:furniturestore',
-    },
-    // Add message ID for better tracking
-    messageId: `<order-${order.id}-${Date.now()}@${process.env.DOMAIN_NAME || 'furniturestore.com'}>`,
-    // Set reply-to to prevent replies
-    replyTo: 'noreply@furniturestore.com',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px;">
         <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #438c71; margin: 0; font-size: 28px;">Furniture Store</h1>
+            <h1 style="color: #438c71; margin: 0; font-size: 28px;">${BRAND}</h1>
             <p style="color: #666; margin: 10px 0 0 0;">Order Confirmation</p>
           </div>
           
@@ -260,7 +210,6 @@ export const sendOrderReceipt = async (email: string, order: any, customerName: 
               <span style="color: #666;">Subtotal:</span>
               <span style="font-weight: 600;">${formatPrice(parseFloat(order.itemsPrice.toString()))}</span>
             </div>
-           
             
             <div style="display: flex; justify-content: space-between; border-top: 2px solid #438c71; padding-top: 8px; margin-top: 8px;">
               <span style="font-weight: 700; color: #333; font-size: 18px;">Total:</span>
@@ -287,27 +236,24 @@ export const sendOrderReceipt = async (email: string, order: any, customerName: 
           
           <div style="text-align: center; margin-top: 30px;">
             <p style="color: #666; margin: 0;">If you have any questions about your order, please contact us through our website.</p>
-            <p style="color: #666; margin: 10px 0 0 0;">Thank you for choosing Furniture Store!</p>
+            <p style="color: #666; margin: 10px 0 0 0;">Thank you for choosing ${BRAND}!</p>
           </div>
           
           <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
           <p style="color: #666; font-size: 12px; text-align: center; margin: 0;">
-            This is an automated email from Furniture Store. Please do not reply to this email.
+            This is an automated email from ${BRAND}. Please do not reply to this email.
             <br>For support, please visit our website or contact our customer service team.
           </p>
         </div>
       </div>
     `,
-  };
+  });
 
-  try {
-    await transporter.sendMail(mailOptions);
-    return { success: true };
-  } catch (error) {
-    console.error('Error sending order receipt:', error);
-    return { success: false, error: 'Failed to send order receipt' };
+  if (!result.success) {
+    return { success: false, error: "Failed to send order receipt" };
   }
-}; 
+  return { success: true };
+};
 
 export const sendContactEmail = async (contactData: {
   fullName: string;
@@ -316,30 +262,18 @@ export const sendContactEmail = async (contactData: {
   subject: string;
   message: string;
 }) => {
-  const mailOptions = {
-    from: {
-      name: `${contactData.email} via Furniture Store`,
-      address: process.env.EMAIL_USER || 'noreply@yourdomain.com'
-    },
-    to: 'kipianistore@gmail.com', // The email where contact form submissions will be sent
+  const result = await sendEmail({
+    to: ADMIN_EMAIL,
     subject: `Contact Form: ${contactData.subject} - From: ${contactData.fullName}`,
-    // Add headers for better deliverability but allow replies
-    headers: {
-      'X-Mailer': 'Furniture Store Contact System',
-      'Feedback-ID': 'contact-form:furniturestore',
-    },
-    // Add message ID for better tracking
-    messageId: `<contact-${Date.now()}@${process.env.DOMAIN_NAME || 'furniturestore.com'}>`,
-    // Set reply-to to the customer's email so you can reply directly
     replyTo: contactData.email,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px;">
         <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #438c71; margin: 0; font-size: 28px;">Furniture Store</h1>
+            <h1 style="color: #438c71; margin: 0; font-size: 28px;">${BRAND}</h1>
             <p style="color: #666; margin: 10px 0 0 0;">New Contact Form Submission</p>
             <div style="background-color: #438c71; color: white; padding: 10px; border-radius: 6px; margin-top: 15px;">
-              <p style="margin: 0; font-weight: 600;">📧 Message from: ${contactData.fullName}</p>
+              <p style="margin: 0; font-weight: 600;">Message from: ${contactData.fullName}</p>
             </div>
           </div>
           
@@ -353,12 +287,16 @@ export const sendContactEmail = async (contactData: {
               <strong style="color: #333;">Email:</strong>
               <span style="color: #666; margin-left: 10px;">${contactData.email}</span>
             </div>
-            ${contactData.phone ? `
+            ${
+              contactData.phone
+                ? `
             <div style="margin-bottom: 15px;">
               <strong style="color: #333;">Phone:</strong>
               <span style="color: #666; margin-left: 10px;">${contactData.phone}</span>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
             <div style="margin-bottom: 15px;">
               <strong style="color: #333;">Subject:</strong>
               <span style="color: #666; margin-left: 10px;">${contactData.subject}</span>
@@ -374,32 +312,31 @@ export const sendContactEmail = async (contactData: {
           
           <div style="text-align: center; margin-top: 30px;">
             <p style="color: #666; margin: 0;">This message was sent from the contact form on your website.</p>
-            <p style="color: #666; margin: 10px 0 0 0; font-weight: 600; color: #438c71;">💬 You can reply directly to this email to respond to the customer!</p>
+            <p style="margin: 10px 0 0 0; font-weight: 600; color: #438c71;">You can reply directly to this email to respond to the customer!</p>
             <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">Customer Email: ${contactData.email}</p>
           </div>
           
           <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
           <p style="color: #666; font-size: 12px; text-align: center; margin: 0;">
-            This is an automated email from Furniture Store Contact Form.
+            This is an automated email from ${BRAND} Contact Form.
             <br>Submitted on ${new Date().toLocaleString()}
           </p>
         </div>
       </div>
     `,
-  };
+  });
 
-  try {
-    await transporter.sendMail(mailOptions);
-    return { success: true };
-  } catch (error) {
-    console.error('Error sending contact email:', error);
-    return { success: false, error: 'Failed to send contact email' };
+  if (!result.success) {
+    return { success: false, error: "Failed to send contact email" };
   }
-}; 
+  return { success: true };
+};
 
 export const sendOrderToAdmin = async (order: any) => {
   const formatPrice = (price: number) => `₾${price.toFixed(2)}`;
-  const orderItemsHtml = order.orderitems.map((item: any) => `
+  const orderItemsHtml = order.orderitems
+    .map(
+      (item: any) => `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #eee;">
         <div style="display: flex; align-items: center;">
@@ -414,30 +351,20 @@ export const sendOrderToAdmin = async (order: any) => {
         ${formatPrice(item.price * item.qty)}
       </td>
     </tr>
-  `).join('');
+  `
+    )
+    .join("");
 
   const shipping = order.shippingAddress;
   const user = order.user;
   const deliveryLocationText = await resolveDeliveryLocationLabel(
     order.deliveryLocation,
-    'ka'
+    "ka"
   );
 
-  const mailOptions = {
-    from: {
-      name: 'Furniture Store',
-      address: process.env.EMAIL_USER || 'noreply@yourdomain.com'
-    },
-    to: 'kipianistore@gmail.com',
+  const result = await sendEmail({
+    to: ADMIN_EMAIL,
     subject: `New Order Received #${order.id}`,
-    headers: {
-      'X-Auto-Response-Suppress': 'OOF, AutoReply',
-      'Precedence': 'bulk',
-      'X-Mailer': 'Furniture Store Admin System',
-      'Feedback-ID': 'order-admin:furniturestore',
-    },
-    messageId: `<order-admin-${order.id}-${Date.now()}@${process.env.DOMAIN_NAME || 'furniturestore.com'}>`,
-    replyTo: 'noreply@furniturestore.com',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; background-color: #f9f9f9; padding: 20px;">
         <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -448,9 +375,8 @@ export const sendOrderToAdmin = async (order: any) => {
           <ul style="color: #333;">
             <li><strong>სახელი და გვარი:</strong> ${shipping.firstName} ${shipping.lastName}</li>
             <li><strong>ემეილი:</strong> ${shipping.email}</li>
-            <li><strong>ტელეფონი:</strong> ${shipping.phone || 'N/A'}</li>
-         
-            <li><strong>მყიდველის ემეილი:</strong> ${user?.email || 'N/A'}</li>
+            <li><strong>ტელეფონი:</strong> ${shipping.phone || "N/A"}</li>
+            <li><strong>მყიდველის ემეილი:</strong> ${user?.email || "N/A"}</li>
           </ul>
           <h3>მყიდველის მისამართი</h3>
           <p style="color: #333;">
@@ -482,13 +408,10 @@ export const sendOrderToAdmin = async (order: any) => {
         </div>
       </div>
     `,
-  };
+  });
 
-  try {
-    await transporter.sendMail(mailOptions);
-    return { success: true };
-  } catch (error) {
-    console.error('Error sending admin order email:', error);
-    return { success: false, error: 'Failed to send admin order email' };
+  if (!result.success) {
+    return { success: false, error: "Failed to send admin order email" };
   }
-}; 
+  return { success: true };
+};

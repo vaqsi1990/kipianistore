@@ -14,8 +14,9 @@ import SideLogo from "@/components/SideLogo";
 
 
 export const metadata: Metadata = {
-  title: "Kipiani store",
-  description: "A complete e-commerce application with Next.js and Wix",
+  title: "Kipiani Store",
+  description:
+    "Kipiani Store — premium furniture and sleep products in Georgia. Shops in Batumi, Kobuleti, Kutaisi, and Tbilisi.",
   other: {
     "preload-images": "true",
   },
