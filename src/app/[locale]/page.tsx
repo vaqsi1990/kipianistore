@@ -6,6 +6,7 @@ import ProductList from "@/components/ProductList";
 import React, { Suspense } from "react";
 import ElegantHeroSlider from "@/components/ElegantHeroSlider";
 import Why from "@/components/Why";
+import Construction from "@/components/Construction";
 
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center p-8">
@@ -15,25 +16,26 @@ const LoadingSpinner = () => (
 
 const HomePage = () => {
   return (
-    <div className="flex flex-col min-h-screen">
-      <ElegantHeroSlider />
+    <div className="flex flex-col">
+      <Construction />
+      {/* <ElegantHeroSlider />
       <Suspense fallback={<LoadingSpinner />}>
         <Why />
       </Suspense>
       <div className="w-full">
         <Suspense fallback={<LoadingSpinner />}>
           <Categories />
-        </Suspense>
+        </Suspense> */}
         {/* <Suspense fallback={<LoadingSpinner />}>
           <BrandSlider />
         </Suspense> */}
 
-        <div className="">
+        {/* <div className="">
           <Suspense fallback={<LoadingSpinner />}>
             <ProductList />
           </Suspense>
-        </div>
-      </div>
+        </div> */}
+      {/* </div> */}
     </div>
   );
 };
