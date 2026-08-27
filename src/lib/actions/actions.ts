@@ -8,7 +8,7 @@ import { requireAdmin } from "../auth-helpers";
 import { cookies } from "next/headers";
 import { syncProductStores } from "./store.actions";
 import { getProductStoreSlugs } from "../store-utils";
-import { filterFinaCatalog, getFinaCatalog, getFinaProductById } from "../fina";
+import { filterFinaCatalog, getFinaCatalog, getFinaProductById, hasFinaStock } from "../fina";
 
 export async function convertToPlainObject<T>(value: T): Promise<T> {
   return JSON.parse(JSON.stringify(value));
@@ -232,7 +232,7 @@ async function fetchProductsFromDb(
     minPrice: filters?.minPrice as number | undefined,
     maxPrice: filters?.maxPrice as number | undefined,
     query: filters?.query as string | undefined,
-    inStock: filters?.inStock as boolean | undefined,
+    inStock: true,
     popular: filters?.popular as boolean | undefined,
     onSale: filters?.onSale as boolean | undefined,
     storeSlug: selectedStore,
@@ -320,7 +320,8 @@ export async function getSimilarProducts(
       .filter(
         (product) =>
           product.id !== String(productId) &&
-          product.category === normalizedCategory
+          product.category === normalizedCategory &&
+          hasFinaStock(product)
       )
       .slice(0, limit);
   } catch (error) {
@@ -341,6 +342,7 @@ export async function getProductCategoryCounts() {
   const catalog = await getFinaCatalog();
   const countMap = new Map<string, number>();
   for (const product of catalog) {
+    if (!hasFinaStock(product)) continue;
     countMap.set(product.category, (countMap.get(product.category) || 0) + 1);
   }
 

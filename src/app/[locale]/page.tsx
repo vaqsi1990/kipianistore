@@ -24,9 +24,9 @@ const HomePage = () => {
         <Suspense fallback={<LoadingSpinner />}>
           <Categories />
         </Suspense>
-        <Suspense fallback={<LoadingSpinner />}>
+        {/* <Suspense fallback={<LoadingSpinner />}>
           <BrandSlider />
-        </Suspense>
+        </Suspense> */}
 
         <div className="">
           <Suspense fallback={<LoadingSpinner />}>

@@ -470,7 +470,7 @@ export function filterFinaCatalog(
     if (storeSlug) {
       const store = product.storeAvailability.find((s) => s.slug === storeSlug);
       if (!store?.inStock) return false;
-    } else if (filters?.inStock === true && !product.popular) {
+    } else if (filters?.inStock === true && !hasFinaStock(product)) {
       return false;
     }
     return true;
