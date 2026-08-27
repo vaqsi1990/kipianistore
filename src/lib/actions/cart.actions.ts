@@ -3,7 +3,7 @@ import { auth } from "../../../auth";
 import { prisma } from "../prisma";
 import { convertToPlainObject } from "../utils";
 import { CartItem } from "../types";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { getCartForUser, enrichCartItem } from "../cart-helpers";
 import { getFinaProductById } from "../fina";
 import { assertFinaStock, finaProductToCartItem } from "../fina-cart";

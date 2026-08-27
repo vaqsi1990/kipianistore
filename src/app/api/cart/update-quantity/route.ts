@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { auth } from '../../../../../auth';
 import { prisma } from '@/lib/prisma';
 import { CartItem } from '@/lib/types';
-import { Prisma } from '@prisma/client';
+import { Prisma } from "@/generated/prisma/client";
 import { getFinaProductById } from '@/lib/fina';
 import { assertFinaStock } from '@/lib/fina-cart';
 

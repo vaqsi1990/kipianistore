@@ -27,6 +27,7 @@ import {
 import { format } from "date-fns";
 import Image from "next/image";
 import { toast } from "sonner";
+import { formatUserName } from "@/lib/utils";
 
 interface OrderItem {
   productId: string;
@@ -69,6 +70,7 @@ interface Order {
 interface User {
   id: string;
   name: string;
+  lastName?: string | null;
   email: string;
   role: string;
   createdAt: string | Date;
@@ -103,7 +105,7 @@ const UserManagementCard: React.FC<UserManagementCardProps> = ({ user, currentUs
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to delete user "${formatUserName(user) || user.name}"? This action cannot be undone.`)) {
       return;
     }
 
@@ -153,7 +155,7 @@ const UserManagementCard: React.FC<UserManagementCardProps> = ({ user, currentUs
           <div>
             <CardTitle className="flex items-center text-lg">
               <FaUser className="w-5 h-5 mr-2 text-[#438c71]" />
-              {user.name}
+              {formatUserName(user) || user.name}
             </CardTitle>
             <CardDescription>
               Member since {formatDate(user.createdAt)} • {user.role}
@@ -244,7 +246,7 @@ const UserManagementCard: React.FC<UserManagementCardProps> = ({ user, currentUs
             <div className="space-y-2 text-sm">
               <div className="flex items-center">
                 <FaUser className="w-3 h-3 mr-2 text-gray-400" />
-                <span className="font-medium">{user.name}</span>
+                <span className="font-medium">{formatUserName(user) || user.name}</span>
               </div>
               <div className="flex items-center">
                 <FaEnvelope className="w-3 h-3 mr-2 text-gray-400" />

@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
-import { Cart } from "@prisma/client";
+import { Cart } from "@/generated/prisma/client";
 import { CartItem } from "./types";
 import {
   getAvailableStoreSlugsFromCart,

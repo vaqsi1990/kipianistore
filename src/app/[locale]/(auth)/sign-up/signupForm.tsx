@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl';
 
 const signUpDefaultValues = {
   name: '',
+  lastName: '',
   email: '',
   password: '',
   confirmPassword: '',
@@ -117,16 +118,33 @@ function SignupForm({ callbackUrl }: { callbackUrl: string }) {
     <form action={action}>
       <input type="hidden" name="callbackUrl" value={callbackUrl} />
       <div className="space-y-6">
-        <div>
-          <Label className='text-[18px] font-bold' htmlFor="name">{t("name")}</Label>
-          <Input 
-            id="name" 
-            name="name" 
-            type="text" 
-            autoComplete="name" 
-            defaultValue={signUpDefaultValues.name} 
-            placeholder={t("namePlaceholder")}
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label className='text-[18px] font-bold' htmlFor="name">{t("name")}</Label>
+            <Input 
+              id="name" 
+              name="name" 
+              type="text" 
+              required
+              minLength={2}
+              autoComplete="given-name" 
+              defaultValue={signUpDefaultValues.name} 
+              placeholder={t("namePlaceholder")}
+            />
+          </div>
+          <div>
+            <Label className='text-[18px] font-bold' htmlFor="lastName">{t("lastName")}</Label>
+            <Input 
+              id="lastName" 
+              name="lastName" 
+              type="text" 
+              required
+              minLength={2}
+              autoComplete="family-name" 
+              defaultValue={signUpDefaultValues.lastName} 
+              placeholder={t("lastNamePlaceholder")}
+            />
+          </div>
         </div>
         <div>
           <Label className='text-[18px] font-bold' htmlFor="email">{t("email")}</Label>
@@ -135,6 +153,7 @@ function SignupForm({ callbackUrl }: { callbackUrl: string }) {
             name="email" 
             type="email" 
             autoComplete="email" 
+            required
             defaultValue={signUpDefaultValues.email} 
             placeholder={t("emailPlaceholder")}
           />
@@ -145,6 +164,7 @@ function SignupForm({ callbackUrl }: { callbackUrl: string }) {
             id="password" 
             name="password" 
             autoComplete="new-password" 
+            required
             defaultValue={signUpDefaultValues.password} 
             placeholder={t("passwordPlaceholder")}
           />
@@ -155,6 +175,7 @@ function SignupForm({ callbackUrl }: { callbackUrl: string }) {
             id="confirmPassword" 
             name="confirmPassword" 
             autoComplete="new-password" 
+            required
             defaultValue={signUpDefaultValues.confirmPassword} 
             placeholder={t("confirmPasswordPlaceholder")}
           />

@@ -7,7 +7,7 @@ import { getCartForUser, validateDeliveryForCart } from '@/lib/cart-helpers';
 import { CartItem } from '@/lib/types';
 import { decrementOrderStock } from '@/lib/stock-utils';
 import { buildFinaOrderItems } from '@/lib/fina-cart';
-import { Prisma } from '@prisma/client';
+import { Prisma } from "@/generated/prisma/client";
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,7 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../src/lib/prisma.ts";
 
 const DEFAULT_STORES = [
   {

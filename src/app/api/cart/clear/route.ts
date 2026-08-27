@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { auth } from '../../../../../auth';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma } from "@/generated/prisma/client";
 
 export async function POST(request: NextRequest) {
   try {

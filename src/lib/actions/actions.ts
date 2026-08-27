@@ -1,6 +1,6 @@
 "use server";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "../prisma";
 import { ProductSchema, updateProductSchema } from "../validators";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";

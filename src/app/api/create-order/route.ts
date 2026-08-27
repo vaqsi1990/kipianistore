@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 import { auth } from "../../../../auth";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { bogTokenManager } from "@/lib/bog-token";
 import { CartItem } from "@/lib/types";
 import { getCartForUser, validateDeliveryForCart } from "@/lib/cart-helpers";
@@ -23,7 +23,7 @@ function getBaseUrl() {
 async function getServerPrice(
   productId: string,
   _size: string
-): Promise<{ price: number; title: string } | null> {
+): Promise<{ price: number; title: string; image: string } | null> {
   return getFinaServerPrice(productId);
 }
 

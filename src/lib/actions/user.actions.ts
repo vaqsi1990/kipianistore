@@ -14,7 +14,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
 import { revalidatePath } from 'next/cache';
-import { Prisma } from '@prisma/client';
+import { Prisma } from "@/generated/prisma/client";
 import { getMyCart } from './cart.actions';
 import { generateVerificationToken } from '../token';
 import { sendVerificationEmail } from '../email';
@@ -45,6 +45,7 @@ export async function signUpUser(prevState: any, formData: FormData) {
   try {
     const user = signUpFormSchema.parse({
       name: formData.get('name'),
+      lastName: formData.get('lastName'),
       email: formData.get('email'),
       password: formData.get('password'),
       confirmPassword: formData.get('confirmPassword'),
@@ -68,6 +69,7 @@ export async function signUpUser(prevState: any, formData: FormData) {
     await prisma.user.create({
       data: {
         name: user.name,
+        lastName: user.lastName,
         email: user.email,
         password: hashedPassword,
       },

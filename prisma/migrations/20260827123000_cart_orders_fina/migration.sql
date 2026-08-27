@@ -71,6 +71,10 @@ CREATE TABLE IF NOT EXISTS "OrderItem" (
   CONSTRAINT "orderitems_orderId_productId_pk" PRIMARY KEY ("orderId", "productId")
 );
 
+ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "paymentStatus" "PaymentStatus";
+ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "bogOrderId" VARCHAR(36);
+ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "externalOrderId" VARCHAR(36);
+
 CREATE INDEX IF NOT EXISTS "Cart_userId_idx" ON "Cart"("userId");
 CREATE INDEX IF NOT EXISTS "Cart_sessionCartId_idx" ON "Cart"("sessionCartId");
 CREATE INDEX IF NOT EXISTS "Order_userId_idx" ON "Order"("userId");

@@ -24,6 +24,7 @@ import {
 import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
+import { formatUserName } from "@/lib/utils";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
@@ -221,7 +222,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                     <div className="space-y-2">
                       <div className="flex items-center">
                         <FaUser className="w-4 h-4 mr-2 text-[#438c71]" />
-                        <span>{order.user.name}</span>
+                        <span>{formatUserName(order.user) || order.user.name}</span>
                       </div>
                       <div className="flex items-center">
                         <FaEnvelope className="w-4 h-4 mr-2 text-[#438c71]" />

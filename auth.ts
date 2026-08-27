@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "@/lib/encrypt";
 import { authConfig } from "./auth.config";
+import { formatUserName } from "@/lib/utils";
 import type { DefaultSession, NextAuthConfig } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
@@ -75,8 +76,7 @@ export const config = {
 
         return {
           id: user.id,
-          name: user.name,
-       
+          name: formatUserName(user) || user.name,
           email: user.email,
           role: user.role,
         };
@@ -93,11 +93,11 @@ export const config = {
       } else if (trigger === "update" && token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true, name: true },
+          select: { role: true, name: true, lastName: true },
         });
         if (dbUser) {
           token.role = dbUser.role;
-          token.name = dbUser.name;
+          token.name = formatUserName(dbUser) || dbUser.name;
         }
       }
 

@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { auth } from '../../../../../auth';
 import { prisma } from '@/lib/prisma';
 import { CartItem } from '@/lib/types';
-import { Prisma } from '@prisma/client';
+import { Prisma } from "@/generated/prisma/client";
 
 function calculateCartTotals(items: CartItem[]) {
   const itemsPrice = items.reduce((total, item) => {

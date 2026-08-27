@@ -1,11 +1,10 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Session {
@@ -21,6 +20,7 @@ model Session {
 model User {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name             String    @default("NO_NAME")
+  lastName         String?
   email            String    @unique(map: "user_email_idx")
   emailVerified    DateTime? @db.Timestamp(6)
   image            String?

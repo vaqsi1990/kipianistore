@@ -25,6 +25,7 @@ import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
 import Image from "next/image";
+import { formatUserName } from "@/lib/utils";
 import { getFinaCatalog } from "@/lib/fina";
 import OrderManagementCard from "@/components/OrderManagementCard";
 import UserManagementCard from "@/components/UserManagementCard";
@@ -427,7 +428,7 @@ export default async function AdminAllPage() {
                             </div>
                             <div>
                               <p className="font-medium text-blue-900">Order #{order.id.slice(-8)}</p>
-                              <p className="text-sm text-blue-600">{order.user.name}</p>
+                              <p className="text-sm text-blue-600">{formatUserName(order.user) || order.user.name}</p>
                             </div>
                           </div>
                           <div className="text-right">

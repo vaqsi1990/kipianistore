@@ -30,6 +30,7 @@ import {
 import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
+import { formatUserName } from "@/lib/utils";
 import Image from "next/image";
 import { FaSyncAlt } from "react-icons/fa";
 import BOGFilterButton from "@/components/BOGFilterButton";
@@ -380,7 +381,7 @@ export default async function OrdersPage({
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <FaUser className="w-3 h-3 text-gray-500" />
-                              <p className="font-medium">{order.user.name}</p>
+                              <p className="font-medium">{formatUserName(order.user) || order.user.name}</p>
                               {order.user.role === 'admin' && (
                                 <Badge variant="default" className="text-xs">ადმინი</Badge>
                               )}

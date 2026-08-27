@@ -6,6 +6,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function formatUserName(user: {
+  name?: string | null;
+  lastName?: string | null;
+}) {
+  return [user.name, user.lastName].filter(Boolean).join(" ").trim();
+}
+
 // Convert prisma object into a regular JS object
 export function convertToPlainObject<T>(value: T): T {
   // Handle Decimal objects specifically

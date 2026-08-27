@@ -22,6 +22,7 @@ import { Link } from "@/i18n/navigation";
 
 import { format } from "date-fns";
 import { getTranslations } from "next-intl/server";
+import { formatUserName } from "@/lib/utils";
 import SignOutButton from "@/components/SignOutButton";
 import { getUserOrdersWithBOGStatus } from "@/lib/actions/order.actions";
 import RecentOrders from "@/components/RecentOrders";
@@ -84,7 +85,7 @@ export default async function ProfilePage() {
                 <div className="mx-auto w-24 h-24  bg-[#bbb272] rounded-full flex items-center justify-center mb-4">
                   <User className="text-white text-3xl" />
                 </div>
-                <CardTitle className="text-2xl">{user.name}</CardTitle>
+                <CardTitle className="text-2xl">{formatUserName(user) || user.name}</CardTitle>
                 <div className="flex items-center justify-center gap-2">
                   <Badge
                     variant={isAdmin ? "default" : "secondary"}
