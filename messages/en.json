@@ -560,6 +560,8 @@
     "accountType": "Account Type",
     "signOut": "Sign Out",
     "recoverPassword": "Recover Password",
+    "loadErrorTitle": "Couldn't load profile",
+    "loadErrorDescription": "Sign out and sign in again to continue.",
     "adminActions": {
       "title": "Admin Actions",
       "description": "Manage your store and products",

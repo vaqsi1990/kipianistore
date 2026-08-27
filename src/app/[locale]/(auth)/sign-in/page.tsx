@@ -29,7 +29,8 @@ async function page(props: {
     const safeTarget =
       callbackUrl &&
       !callbackUrl.includes("/sign-in") &&
-      callbackUrl.startsWith("/")
+      callbackUrl.startsWith("/") &&
+      !callbackUrl.startsWith("//")
         ? callbackUrl
         : "/";
     return redirect(safeTarget);

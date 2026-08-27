@@ -7,14 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   FaPlus, 
-  FaEye, 
-  FaSearch,
-  FaFilter,
-  FaSort,
   FaCrown,
   FaShoppingCart,
   FaMoneyBillWave,
-  FaTruck,
   FaCheckCircle,
   FaClock,
   FaUsers,
@@ -23,13 +18,11 @@ import {
 } from "react-icons/fa";
 import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/prisma";
-import { format } from "date-fns";
-import Image from "next/image";
 import { formatUserName } from "@/lib/utils";
 import { getFinaCatalog } from "@/lib/fina";
 import OrderManagementCard from "@/components/OrderManagementCard";
 import UserManagementCard from "@/components/UserManagementCard";
-import { useTranslations } from "next-intl";
+import AdminProductsTable from "@/components/AdminProductsTable";
 
 async function getAllProducts() {
   return getFinaCatalog();
@@ -262,116 +255,24 @@ export default async function AdminAllPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {products.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b bg-white">
-                          <th className="text-left p-4 font-semibold">პროდუქტი</th>
-                          <th className="text-left p-4 font-semibold">კატეგორია</th>
-                          <th className="text-left p-4 font-semibold">ბრენდი</th>
-                          <th className="text-left p-4 font-semibold">ფასი</th>
-                          <th className="text-left p-4 font-semibold">გაყიდვები</th>
-                          <th className="text-left p-4 font-semibold">სტატუსი</th>
-                          <th className="text-left p-4 font-semibold">ქონება</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {products.map((product) => (
-                          <tr key={product.id} className="border-b bg-white">
-                            <td className="p-4">
-                              <div className="flex items-center space-x-3">
-                                {product.images && product.images.length > 0 && (
-                                  <Image
-                                    src={product.images[0]}
-                                    alt={product.title}
-                                    width={48}
-                                    height={48}
-                                    className="w-12 h-12 object-cover rounded-lg"
-                                  />
-                                )}
-                                <div>
-                                  <p className="font-medium">{product.title}</p>
-                                  <p className="text-sm text-gray-500">{product.titleEn}</p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <Badge variant="outline">
-                                {product.category}
-                              </Badge>
-                            </td>
-                            <td className="p-4">
-                              <p className="font-medium">{product.brand}</p>
-                            </td>
-                            <td className="p-4">
-                              <p className="text-sm text-gray-600">
-                                ₾{Number(product.price || 0).toFixed(2)}
-                              </p>
-                            </td>
-                            <td className="p-4">
-                              <p className="font-medium">{product.sales || 0}</p>
-                            </td>
-                            <td className="p-4">
-                              <div className="flex flex-col gap-1">
-                                {product.popular && (
-                                  <Badge variant="default" className="text-xs">
-                                    Popular
-                                  </Badge>
-                                )}
-                                <div className="flex gap-1">
-                                  {product.tbilisi && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      თბილისი
-                                    </Badge>
-                                  )}
-                                  {product.batumi && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      ბათუმი
-                                    </Badge>
-                                  )}
-                                  {product.qutaisi && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      ქუთაისი
-                                    </Badge>
-                                  )}
-                                   {product.qutaisi && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      ქობულეთი
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <div className="flex items-center space-x-2">
-                                <Link href={`/products/${product.id}`}>
-                                  <Button className="w-full px-4 mb-10 py-2 text-[20px] font-bold text-white bg-[#869dab] rounded-lg hover:bg-[#3a7a5f] transition-colors" size="sm" variant="outline">
-                                    <FaEye className="w-3 h-3" />
-                                  </Button>
-                                </Link>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                      <FaPlus className="text-gray-400 text-2xl" />
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No products yet</h3>
-                    <p className="text-gray-500 mb-6">Get started by adding your first product</p>
-                    <Link href="/new">
-                      <Button className="w-full px-4 mb-10 py-2 text-[20px] font-bold text-white bg-[#869dab] rounded-lg hover:bg-[#3a7a5f] transition-colors" variant="default">
-                        <FaPlus className="mr-2" />
-                        პროდუქტის დამატება
-                      </Button>
-                    </Link>
-                  </div>
-                )}
+                <AdminProductsTable
+                  products={products.map((product) => ({
+                    id: product.id,
+                    title: product.title,
+                    titleEn: product.titleEn,
+                    category: product.category,
+                    images: product.images,
+                    brand: product.brand,
+                    price: product.price,
+                    sales: product.sales,
+                    popular: product.popular,
+                    tbilisi: product.tbilisi,
+                    batumi: product.batumi,
+                    batumi44: product.batumi44,
+                    qutaisi: product.qutaisi,
+                    kobuleti: product.kobuleti,
+                  }))}
+                />
               </CardContent>
             </Card>
           </TabsContent>

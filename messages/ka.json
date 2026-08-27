@@ -279,6 +279,8 @@
     "accountType": "ანგარიშის ტიპი",
     "signOut": "გასვლა",
     "recoverPassword": "პაროლის აღდგენა",
+    "loadErrorTitle": "პროფილი ვერ ჩაიტვირთა",
+    "loadErrorDescription": "გაიარეთ გასვლა და ხელახლა შედით ანგარიშზე.",
     "adminActions": {
       "title": "ადმინისტრატორის ქმედებები",
       "description": "მართეთ თქვენი მაღაზია და პროდუქტები",

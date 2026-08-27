@@ -27,28 +27,35 @@ import SignOutButton from "@/components/SignOutButton";
 import { getUserOrdersWithBOGStatus } from "@/lib/actions/order.actions";
 import RecentOrders from "@/components/RecentOrders";
 
-async function getCurrentUser() {
-  const session = await auth();
-  if (!session?.user?.id) return null;
-
-  // Use the new function to get orders with refreshed BOG statuses
-  const user = await getUserOrdersWithBOGStatus();
-
-  if (user) {
-  } else {
-    console.log("User not found");
-  }
-  console.log("==========================");
-
-  return user;
-}
-
 export default async function ProfilePage() {
-  const user = await getCurrentUser();
+  const session = await auth();
   const t = await getTranslations("profile");
 
-  if (!user) {
+  if (!session?.user?.id) {
     redirect("/sign-in");
+  }
+
+  const user = await getUserOrdersWithBOGStatus();
+
+  // Session exists but profile data is missing (stale JWT after DB change,
+  // or a query error). Do not send the user back to sign-in — that loops
+  // with callbackUrl=/profile while the JWT is still valid.
+  if (!user) {
+    return (
+      <div className="min-h-screen mt-9 py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md mx-auto">
+          <Card className="bg-white">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">{t("loadErrorTitle")}</CardTitle>
+              <CardDescription>{t("loadErrorDescription")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SignOutButton />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   const isAdmin = user.role === "admin";
