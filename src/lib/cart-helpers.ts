@@ -3,13 +3,18 @@ import { prisma } from "./prisma";
 import { Cart } from "@prisma/client";
 import { CartItem } from "./types";
 import {
-  getProductStoreSlugs,
-  legacyFlagsFromSlugs,
   getAvailableStoreSlugsFromCart,
   getStoreLabel,
   DEFAULT_STORES,
+  legacyFlagsFromSlugs,
 } from "./store-utils";
 import { validateCartStockAtStore } from "./stock-utils";
+import {
+  getFinaProductById,
+  getFinaStoreList,
+  getFinaStoreSlugs,
+  isKnownFinaStoreSlug,
+} from "./fina";
 
 export async function getCartForUser(userId: string): Promise<Cart | null> {
   const cookieStore = await cookies();
@@ -36,24 +41,16 @@ export async function getCartForUser(userId: string): Promise<Cart | null> {
 }
 
 export async function enrichCartItem(item: CartItem): Promise<CartItem> {
-  const product = await prisma.product.findFirst({
-    where: { id: item.productId },
-    include: {
-      stores: {
-        include: {
-          store: { select: { slug: true } },
-        },
-      },
-    },
-  });
-
+  const product = await getFinaProductById(item.productId);
   if (!product) return item;
 
-  const storeSlugs = getProductStoreSlugs(product);
+  const storeSlugs = getFinaStoreSlugs(product);
   const flags = legacyFlagsFromSlugs(storeSlugs);
 
   return {
     ...item,
+    name: product.title || item.name,
+    image: product.images[0] || item.image,
     storeSlugs,
     ...flags,
   };
@@ -74,11 +71,11 @@ export async function validateDeliveryForCart(
     return { valid: false, availableSlugs };
   }
 
-  const store = await prisma.store.findFirst({
-    where: { slug: deliverySlug, isActive: true },
-  });
+  const knownStore =
+    isKnownFinaStoreSlug(deliverySlug) ||
+    DEFAULT_STORES.some((store) => store.slug === deliverySlug);
 
-  if (!store) {
+  if (!knownStore) {
     return { valid: false, availableSlugs };
   }
 
@@ -98,12 +95,9 @@ export async function resolveDeliveryLocationLabel(
   slug: string,
   locale: "ka" | "en" = "ka"
 ): Promise<string> {
-  const store = await prisma.store.findFirst({
-    where: { slug, isActive: true },
-  });
-
-  if (store) {
-    return `${getStoreLabel(store, locale)} (${store.address})`;
+  const finaStore = getFinaStoreList().find((store) => store.slug === slug);
+  if (finaStore) {
+    return `${getStoreLabel(finaStore, locale)} (${finaStore.address})`;
   }
 
   const fallback = DEFAULT_STORES.find((entry) => entry.slug === slug);

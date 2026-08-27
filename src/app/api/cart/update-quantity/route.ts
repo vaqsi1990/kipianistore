@@ -4,6 +4,8 @@ import { auth } from '../../../../../auth';
 import { prisma } from '@/lib/prisma';
 import { CartItem } from '@/lib/types';
 import { Prisma } from '@prisma/client';
+import { getFinaProductById } from '@/lib/fina';
+import { assertFinaStock } from '@/lib/fina-cart';
 
 function calculateCartTotals(items: CartItem[]) {
   const itemsPrice = items.reduce((total, item) => {
@@ -64,6 +66,25 @@ export async function POST(request: NextRequest) {
     }
 
     const existingItems = cart.items as CartItem[];
+    const selectedStore = cookieStore.get('selectedStore')?.value;
+    const target = existingItems.find(
+      (item) => item.productId === productId && item.size === size
+    );
+    if (target) {
+      const product = await getFinaProductById(productId);
+      if (!product) {
+        return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      }
+      try {
+        assertFinaStock(product, quantity, selectedStore);
+      } catch (error) {
+        return NextResponse.json(
+          { error: error instanceof Error ? error.message : 'Out of stock' },
+          { status: 400 }
+        );
+      }
+    }
+
     const updatedItems = existingItems.map(item => {
       if (item.productId === productId && item.size === size) {
         return { ...item, qty: quantity };

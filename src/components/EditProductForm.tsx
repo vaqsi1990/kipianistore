@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { updateProduct, getProductById } from "@/lib/actions/actions";
+import { updateProduct, getSingleProduct } from "@/lib/actions/actions";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import ImageUpload from "@/components/CloudinaryUploader";
@@ -21,6 +21,24 @@ import { z } from "zod";
 import StoreLocationsPicker from "@/components/StoreLocationsPicker";
 
 type EditProductFormValues = z.infer<typeof updateProductSchema>;
+type ProductCategory = EditProductFormValues["category"];
+type ProductSizeValue = NonNullable<EditProductFormValues["sizes"]>[number]["size"];
+
+const PRODUCT_CATEGORIES: ProductCategory[] = [
+  "MATTRESS",
+  "PILLOW",
+  "bundle",
+  "QUILT",
+  "PAD",
+  "BED",
+  "OTHERS",
+];
+
+function toProductCategory(value: string): ProductCategory {
+  return PRODUCT_CATEGORIES.includes(value as ProductCategory)
+    ? (value as ProductCategory)
+    : "OTHERS";
+}
 
 interface EditProductFormProps {
   productId: string;
@@ -79,27 +97,32 @@ export default function EditProductForm({ productId }: EditProductFormProps) {
   useEffect(() => {
     const loadProduct = async () => {
       try {
-        const product = await getProductById(productId);
+        const product = await getSingleProduct(productId);
         if (product) {
-          form.reset({
+          const values: EditProductFormValues = {
             id: productId,
             title: product.title,
             titleEn: product.titleEn,
-            category: product.category,
+            category: toProductCategory(product.category),
             images: product.images || [],
             brand: product.brand,
             description: product.description,
             descriptionEn: product.descriptionEn,
             price: product.price ? Number(product.price) : undefined,
-            sizes: product.sizes?.map((size: any) => ({
-              size: size.size,
-              price: Number(size.price)
+            sizes: product.sizes?.map((size) => ({
+              size: size.size as ProductSizeValue,
+              price: Number(size.price),
             })) || [{ size: "SIZE_80_190", price: 0 }],
             storeIds: product.storeIds ?? [],
-            storeStock: product.storeStock ?? [],
+            storeStock:
+              product.stores?.map((entry) => ({
+                storeId: entry.storeId,
+                stock: entry.stock,
+              })) ?? [],
             popular: product.popular || false,
             sales: product.sales || 0,
-          });
+          };
+          form.reset(values);
         }
       } catch (error) {
         console.error("Error loading product:", error);

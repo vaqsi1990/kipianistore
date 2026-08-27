@@ -106,7 +106,6 @@ model Product {
   sales   Int?    @default(0)
 
   createdAt DateTime      @default(now()) @db.Timestamp(6)
-  OrderItem OrderItem[]
   sizes     ProductSize[]
   stores    ProductStore[]
 
@@ -228,14 +227,13 @@ model Order {
 
 model OrderItem {
   orderId   String  @db.Uuid
-  productId String  @db.Uuid
+  productId String
   qty       Int
   price     Decimal @db.Decimal(12, 2)
   title     String
 
-  image   String
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  image String
+  order Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@id([orderId, productId], map: "orderitems_orderId_productId_pk")
 }

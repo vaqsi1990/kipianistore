@@ -8,7 +8,7 @@ import { requireAdmin } from "../auth-helpers";
 import { cookies } from "next/headers";
 import { syncProductStores } from "./store.actions";
 import { getProductStoreSlugs } from "../store-utils";
-import { filterFinaCatalog, getFinaCatalog } from "../fina";
+import { filterFinaCatalog, getFinaCatalog, getFinaProductById } from "../fina";
 
 export async function convertToPlainObject<T>(value: T): Promise<T> {
   return JSON.parse(JSON.stringify(value));
@@ -214,12 +214,8 @@ export async function updateProduct(data: z.infer<typeof updateProductSchema>) {
 }
 
 export async function getProductCategories() {
-  const rows = await prisma.product.findMany({
-    distinct: ["category"],
-    select: { category: true },
-    orderBy: { category: "asc" },
-  });
-  return rows.map((row) => row.category);
+  const catalog = await getFinaCatalog();
+  return Array.from(new Set(catalog.map((product) => product.category))).sort();
 }
 
 async function fetchProductsFromDb(
@@ -289,8 +285,7 @@ export async function getAllProducts(page = 1, pageSize = 20, getAll = false, fi
 
 export async function getProductById(productId: string) {
   try {
-    const catalog = await getFinaCatalog();
-    const product = catalog.find((item) => item.id === String(productId));
+    const product = await getFinaProductById(productId);
     if (product) {
       return {
         ...product,

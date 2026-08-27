@@ -170,16 +170,16 @@ const SideBar: React.FC<SideBarProps> = ({
   useEffect(() => {
     const fetch = async () => {
       try {
-        const { products } = await getAllProducts();
+        const { products } = await getAllProducts(1, 20, true);
         setProducts(products);
 
         const prices = products
-          .flatMap(
-            (product: any) =>
-              product.sizes?.map((s: any) => parseFloat(s.price)) || [
-                parseFloat(product.price),
-              ]
-          )
+          .flatMap((product: any) => {
+            if (product.sizes?.length) {
+              return product.sizes.map((s: any) => parseFloat(s.price));
+            }
+            return [parseFloat(product.price)];
+          })
           .filter((p: number) => !isNaN(p));
 
         if (prices.length > 0) {

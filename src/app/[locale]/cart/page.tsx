@@ -236,17 +236,21 @@ const CartPage = () => {
                     className="flex flex-col md:text-start text-center sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 p-2 sm:p-4 border rounded-lg"
                   >
                     <div className="flex-shrink-0">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-md"
-                        width={80}
-                        height={80}
-                      />
+                      <Link href={`/products/${item.productId}`}>
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-md"
+                          width={80}
+                          height={80}
+                        />
+                      </Link>
                     </div>
                     <div className="flex-1 min-w-0 w-full">
                       <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                        {item.name}
+                        <Link href={`/products/${item.productId}`} className="hover:text-[#bbb272]">
+                          {item.name}
+                        </Link>
                       </h3>
                       <p className="text-xs sm:text-sm text-gray-600">
                         Size: {formatSize(item.size)}

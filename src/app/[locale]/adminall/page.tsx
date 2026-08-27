@@ -7,8 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   FaPlus, 
-  FaEdit, 
-  FaTrash, 
   FaEye, 
   FaSearch,
   FaFilter,
@@ -27,34 +25,20 @@ import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
 import Image from "next/image";
-import DeleteProductButton from "@/components/DeleteProductButton";
+import { getFinaCatalog } from "@/lib/fina";
 import OrderManagementCard from "@/components/OrderManagementCard";
 import UserManagementCard from "@/components/UserManagementCard";
 import { useTranslations } from "next-intl";
 
 async function getAllProducts() {
-  const products = await prisma.product.findMany({
-    include: {
-      sizes: true,
-      OrderItem: true
-    },
-    orderBy: {
-      createdAt: 'desc'
-    }
-  });
-
-  return products;
+  return getFinaCatalog();
 }
 
 async function getAllOrders() {
   const orders = await prisma.order.findMany({
     include: {
       user: true,
-      orderitems: {
-        include: {
-          product: true
-        }
-      }
+      orderitems: true,
     },
     orderBy: {
       createdAt: 'desc'
@@ -80,11 +64,7 @@ async function getAllUsers() {
     include: {
       Order: {
         include: {
-          orderitems: {
-            include: {
-              product: true
-            }
-          }
+          orderitems: true,
         },
         orderBy: {
           createdAt: 'desc'
@@ -277,7 +257,7 @@ export default async function AdminAllPage() {
               <CardHeader>
                 <CardTitle>ყველა პროდუქტი</CardTitle>
                 <CardDescription>
-                 დაამატეთ ან გამართეთ ყველა პროდუქტი
+                 FINA კატალოგი
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -289,7 +269,7 @@ export default async function AdminAllPage() {
                           <th className="text-left p-4 font-semibold">პროდუქტი</th>
                           <th className="text-left p-4 font-semibold">კატეგორია</th>
                           <th className="text-left p-4 font-semibold">ბრენდი</th>
-                          <th className="text-left p-4 font-semibold">ზომა</th>
+                          <th className="text-left p-4 font-semibold">ფასი</th>
                           <th className="text-left p-4 font-semibold">გაყიდვები</th>
                           <th className="text-left p-4 font-semibold">სტატუსი</th>
                           <th className="text-left p-4 font-semibold">ქონება</th>
@@ -325,7 +305,7 @@ export default async function AdminAllPage() {
                             </td>
                             <td className="p-4">
                               <p className="text-sm text-gray-600">
-                                {product.sizes.length} sizes
+                                ₾{Number(product.price || 0).toFixed(2)}
                               </p>
                             </td>
                             <td className="p-4">
@@ -369,13 +349,6 @@ export default async function AdminAllPage() {
                                     <FaEye className="w-3 h-3" />
                                   </Button>
                                 </Link>
-                                <Link href={`/edit?id=${product.id}`}>
-                                  <Button className="w-full px-4 mb-10 py-2 text-[20px] font-bold text-white bg-[#869dab] rounded-lg hover:bg-[#3a7a5f] transition-colors" size="sm" variant="outline">
-                                    <FaEdit className="w-3 h-3" />
-                                  </Button>
-                                </Link>
-                                
-                                <DeleteProductButton productId={product.id} />
                               </div>
                             </td>
                           </tr>

@@ -4,15 +4,14 @@ import { auth } from '../../../../../auth';
 import { prisma } from '@/lib/prisma';
 import { CartItem } from '@/lib/types';
 import { Prisma } from '@prisma/client';
-import { getProductStoreSlugs, legacyFlagsFromSlugs, hasAnyStock } from '@/lib/store-utils';
-import { getProductStockAtStore } from '@/lib/stock-utils';
+import { getFinaProductById } from '@/lib/fina';
+import { assertFinaStock, finaProductToCartItem } from '@/lib/fina-cart';
 
 function calculateCartTotals(items: CartItem[]) {
   const itemsPrice = items.reduce((total, item) => {
     return total + (parseFloat(item.price) * item.qty);
   }, 0);
 
-  // No shipping or tax calculation - just return the items price
   return {
     itemsPrice: parseFloat(itemsPrice.toFixed(2)),
     totalPrice: parseFloat(itemsPrice.toFixed(2)),
@@ -40,7 +39,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get or create session cart ID
     const cookieStore = await cookies();
     let sessionCartId = cookieStore.get('sessionCartId')?.value;
     
@@ -48,23 +46,10 @@ export async function POST(request: NextRequest) {
       sessionCartId = crypto.randomUUID();
     }
 
-    // Get session and user ID
     const session = await auth();
     const userId = session?.user?.id ? (session.user.id as string) : undefined;
 
-    // Get product details
-    const product = await prisma.product.findFirst({
-      where: { id: productId },
-      include: {
-        sizes: true,
-        stores: {
-          include: {
-            store: { select: { slug: true } },
-          },
-        },
-      },
-    });
-
+    const product = await getFinaProductById(productId);
     if (!product) {
       return NextResponse.json(
         { error: 'Product not found' },
@@ -72,53 +57,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!hasAnyStock(product)) {
+    const selectedStore = cookieStore.get('selectedStore')?.value;
+    try {
+      assertFinaStock(product, qty, selectedStore);
+    } catch (error) {
       return NextResponse.json(
-        { error: 'Product is out of stock at all locations' },
+        { error: error instanceof Error ? error.message : 'Out of stock' },
         { status: 400 }
       );
     }
 
-    const selectedStore = cookieStore.get('selectedStore')?.value;
-    if (selectedStore && selectedStore !== 'all') {
-      const stock = await getProductStockAtStore(productId, selectedStore);
-      if (stock < qty) {
-        return NextResponse.json(
-          { error: 'Insufficient stock at the selected store' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Handle OTHERS products (they don't have sizes, only a single price)
-    let finalPrice: number;
-    if (product.category === "OTHERS") {
-      if (!product.price) {
-        return NextResponse.json(
-          { error: 'Product price not available' },
-          { status: 400 }
-        );
-      }
-      const basePrice = parseFloat(product.price.toString());
-      finalPrice = product.sales && product.sales > 0 
-        ? basePrice * (1 - product.sales / 100)
-        : basePrice;
-    } else {
-      // Handle regular products with sizes
-      const productSize = product.sizes.find(s => s.size === size);
-      if (!productSize) {
-        return NextResponse.json(
-          { error: 'Product size not found' },
-          { status: 404 }
-        );
-      }
-      const basePrice = parseFloat(productSize.price.toString());
-      finalPrice = product.sales && product.sales > 0 
-        ? basePrice * (1 - product.sales / 100)
-        : basePrice;
-    }
-
-    // Get or create cart
     let cart = await prisma.cart.findFirst({
       where: userId ? { userId: userId } : { sessionCartId: sessionCartId },
     });
@@ -137,38 +85,33 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Check if item already exists in cart
     const existingItems = cart.items as CartItem[];
+    const cartSize = size || "N/A";
     const existingItemIndex = existingItems.findIndex(
-      item => item.productId === productId && item.size === size
+      item => item.productId === productId && item.size === cartSize
     );
 
     let updatedItems: CartItem[];
     if (existingItemIndex >= 0) {
-      // Update existing item quantity
       updatedItems = [...existingItems];
-      updatedItems[existingItemIndex].qty += qty;
-    } else {
-      // Add new item
-      const storeSlugs = getProductStoreSlugs(product);
-      const flags = legacyFlagsFromSlugs(storeSlugs);
-      const newItem: CartItem = {
-        productId,
-        name: product.title,
-        size: product.category === "OTHERS" ? "N/A" : size,
-        qty: qty,
-        image: product.images[0],
-        price: finalPrice.toFixed(2),
-        storeSlugs,
-        ...flags,
+      const nextQty = updatedItems[existingItemIndex].qty + qty;
+      try {
+        assertFinaStock(product, nextQty, selectedStore);
+      } catch (error) {
+        return NextResponse.json(
+          { error: error instanceof Error ? error.message : 'Out of stock' },
+          { status: 400 }
+        );
+      }
+      updatedItems[existingItemIndex] = {
+        ...finaProductToCartItem(product, cartSize, nextQty),
       };
-      updatedItems = [...existingItems, newItem];
+    } else {
+      updatedItems = [...existingItems, finaProductToCartItem(product, cartSize, qty)];
     }
 
-    // Calculate totals
     const { itemsPrice, totalPrice, shippingPrice, taxPrice } = calculateCartTotals(updatedItems);
 
-    // Update cart
     const updatedCart = await prisma.cart.update({
       where: { id: cart.id },
       data: {
@@ -180,7 +123,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create response with cookie if needed
     const response = NextResponse.json({
       success: true,
       cart: {
@@ -193,13 +135,12 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Set cookie if it didn't exist
     if (!cookieStore.get('sessionCartId')) {
       response.cookies.set('sessionCartId', sessionCartId, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 30, // 30 days
+        maxAge: 60 * 60 * 24 * 30,
       });
     }
 
@@ -211,4 +152,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

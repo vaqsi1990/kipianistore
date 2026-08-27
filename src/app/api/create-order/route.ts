@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/client";
 import { bogTokenManager } from "@/lib/bog-token";
 import { CartItem } from "@/lib/types";
 import { getCartForUser, validateDeliveryForCart } from "@/lib/cart-helpers";
+import { getFinaServerPrice } from "@/lib/fina-cart";
 import {
   extractBogOrderId,
   extractBogRedirectUrl,
@@ -21,33 +22,9 @@ function getBaseUrl() {
 
 async function getServerPrice(
   productId: string,
-  size: string
+  _size: string
 ): Promise<{ price: number; title: string } | null> {
-  const product = await prisma.product.findFirst({
-    where: { id: productId },
-    include: { sizes: true },
-  });
-
-  if (!product) return null;
-
-  let price: number;
-  if (product.category === "OTHERS") {
-    if (!product.price) return null;
-    price = Number(product.price);
-  } else {
-    const sizeRecord = product.sizes.find((s) => s.size === size);
-    if (!sizeRecord) return null;
-    price = Number(sizeRecord.price);
-  }
-
-  if (product.sales && product.sales > 0) {
-    price = price * (1 - product.sales / 100);
-  }
-
-  return {
-    price: parseFloat(price.toFixed(2)),
-    title: product.title,
-  };
+  return getFinaServerPrice(productId);
 }
 
 export async function POST(req: NextRequest) {

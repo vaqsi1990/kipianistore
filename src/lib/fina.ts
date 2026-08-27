@@ -316,6 +316,50 @@ async function loadCatalog(): Promise<FinaCatalogProduct[]> {
   );
 }
 
+export function getFinaStoreList() {
+  return Object.values(FINA_STORES);
+}
+
+export async function getFinaProductById(productId: string) {
+  const catalog = await getFinaCatalog();
+  return catalog.find((product) => product.id === String(productId)) || null;
+}
+
+export function getFinaDiscountedPrice(product: FinaCatalogProduct) {
+  const base = Number(product.price || 0);
+  if (product.sales && product.sales > 0) {
+    return parseFloat((base * (1 - product.sales / 100)).toFixed(2));
+  }
+  return parseFloat(base.toFixed(2));
+}
+
+export function getFinaStoreSlugs(product: FinaCatalogProduct) {
+  return product.storeAvailability
+    .filter((store) => store.inStock)
+    .map((store) => store.slug);
+}
+
+export function getFinaStockAtStore(
+  product: FinaCatalogProduct,
+  storeSlug: string
+) {
+  if (!storeSlug || storeSlug === "all") {
+    return product.storeAvailability.reduce((sum, store) => sum + store.stock, 0);
+  }
+  return (
+    product.storeAvailability.find((store) => store.slug === storeSlug)?.stock ??
+    0
+  );
+}
+
+export function hasFinaStock(product: FinaCatalogProduct) {
+  return product.storeAvailability.some((store) => store.inStock);
+}
+
+export function isKnownFinaStoreSlug(slug: string) {
+  return Object.values(FINA_STORES).some((store) => store.slug === slug);
+}
+
 export async function getFinaCatalog(): Promise<FinaCatalogProduct[]> {
   if (catalogCache && catalogCache.expiresAt > Date.now()) {
     return catalogCache.products;

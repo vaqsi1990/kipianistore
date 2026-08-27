@@ -57,11 +57,7 @@ export async function PATCH(
       data: updateData,
       include: {
         user: true,
-        orderitems: {
-          include: {
-            product: true
-          }
-        }
+        orderitems: true
       }
     });
 

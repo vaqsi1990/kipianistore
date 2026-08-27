@@ -55,19 +55,7 @@ async function getAllOrders(searchParams?: { bog?: string }) {
           createdAt: true
         }
       },
-      orderitems: {
-        include: {
-          product: {
-            select: {
-              id: true,
-              title: true,
-              titleEn: true,
-              category: true,
-              images: true
-            }
-          }
-        }
-      }
+      orderitems: true,
     },
     orderBy: {
       createdAt: 'desc'
@@ -441,9 +429,9 @@ export default async function OrdersPage({
                             <div className="space-y-1">
                               {order.orderitems.slice(0, 3).map((item, index) => (
                                 <div key={index} className="flex items-center gap-2">
-                                  {item.product.images[0] && (
+                                  {item.image && (
                                     <Image
-                                      src={item.product.images[0]}
+                                      src={item.image}
                                       alt={item.title}
                                       className="w-6 h-6 object-cover rounded"
                                       width={24}

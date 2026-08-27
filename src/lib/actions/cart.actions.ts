@@ -4,12 +4,9 @@ import { prisma } from "../prisma";
 import { convertToPlainObject } from "../utils";
 import { CartItem } from "../types";
 import { Prisma } from "@prisma/client";
-import { getCartForUser } from "../cart-helpers";
-import {
-  getProductStoreSlugs,
-  legacyFlagsFromSlugs,
-} from "../store-utils";
-import { enrichCartItem } from "../cart-helpers";
+import { getCartForUser, enrichCartItem } from "../cart-helpers";
+import { getFinaProductById } from "../fina";
+import { assertFinaStock, finaProductToCartItem } from "../fina-cart";
 
 export async function getMyCart() {
     const sessionCartId = (await cookies()).get('sessionCartId')?.value;
@@ -59,29 +56,13 @@ export async function addToCart(productId: string, size: string, quantity: numbe
     const session = await auth();
     const userId = session?.user?.id ? (session.user.id as string) : undefined;
 
-    // Get product details
-    const product = await prisma.product.findFirst({
-      where: { id: productId },
-      include: {
-        sizes: true,
-        stores: {
-          include: {
-            store: { select: { slug: true } },
-          },
-        },
-      },
-    });
-
+    const product = await getFinaProductById(productId);
     if (!product) throw new Error('Product not found');
 
-    const productSize = product.sizes.find(s => s.size === size);
-    if (!productSize) throw new Error('Product size not found');
+    const selectedStore = (await cookies()).get('selectedStore')?.value;
+    assertFinaStock(product, quantity, selectedStore);
 
-    // Calculate the price (discounted if there's a sale)
-    const basePrice = parseFloat(productSize.price.toString());
-    const finalPrice = product.sales && product.sales > 0 
-      ? basePrice * (1 - product.sales / 100)
-      : basePrice;
+    const cartSize = size || "N/A";
 
     // Get or create cart
     let cart = await prisma.cart.findFirst({
@@ -102,32 +83,19 @@ export async function addToCart(productId: string, size: string, quantity: numbe
       });
     }
 
-    // Check if item already exists in cart
     const existingItems = cart.items as CartItem[];
     const existingItemIndex = existingItems.findIndex(
-      item => item.productId === productId && item.size === size
+      item => item.productId === productId && item.size === cartSize
     );
 
     let updatedItems: CartItem[];
     if (existingItemIndex >= 0) {
-      // Update existing item quantity
       updatedItems = [...existingItems];
-      updatedItems[existingItemIndex].qty += quantity;
+      const nextQty = updatedItems[existingItemIndex].qty + quantity;
+      assertFinaStock(product, nextQty, selectedStore);
+      updatedItems[existingItemIndex] = finaProductToCartItem(product, cartSize, nextQty);
     } else {
-      // Add new item
-      const storeSlugs = getProductStoreSlugs(product);
-      const flags = legacyFlagsFromSlugs(storeSlugs);
-      const newItem: CartItem = {
-        productId,
-        name: product.title,
-        size,
-        qty: quantity,
-        image: product.images[0],
-        price: finalPrice.toFixed(2),
-        storeSlugs,
-        ...flags,
-      };
-      updatedItems = [...existingItems, newItem];
+      updatedItems = [...existingItems, finaProductToCartItem(product, cartSize, quantity)];
     }
 
     // Calculate totals

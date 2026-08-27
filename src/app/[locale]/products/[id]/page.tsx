@@ -303,7 +303,7 @@ const Page = (props: { params: { id: string; locale: string } }) => {
                 </div>
 
                 {/* Brand - only show for non-OTHERS products */}
-                {!isOthersProduct() && product.brand && (
+                {product.brand && (
                   <p className="text-[18px]  font-bold  mb-1 text-white">
                     {getTranslation("product.brand", "Brand")}:{" "}
                     <span className="font-medium uppercase text-white">

@@ -32,11 +32,7 @@ async function getOrderById(id: string) {
     where: { id },
     include: {
       user: true,
-      orderitems: {
-        include: {
-          product: true
-        }
-      }
+      orderitems: true,
     }
   });
 

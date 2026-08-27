@@ -35,9 +35,17 @@ export const DEFAULT_STORES = [
     slug: "kobuleti",
     nameKa: "ქობულეთი",
     nameEn: "Kobuleti",
-    address: "შ. რუსთaveli 151",
+    address: "შ. რუსთაველი 151",
     city: "Kobuleti",
     sortOrder: 5,
+  },
+  {
+    slug: "zugdidi",
+    nameKa: "ზუგდიდი",
+    nameEn: "Zugdidi",
+    address: "დადიანის 5",
+    city: "Zugdidi",
+    sortOrder: 6,
   },
 ] as const;
 
