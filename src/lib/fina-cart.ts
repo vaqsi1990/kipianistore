@@ -59,5 +59,41 @@ export async function getFinaServerPrice(productId: string) {
   if (!product) return null;
   const price = getFinaDiscountedPrice(product);
   if (price <= 0) return null;
-  return { price, title: product.title, image: product.images[0] || "/mattress.jpg" };
+  return {
+    price,
+    title: product.title,
+    image: product.images[0] || "/mattress.jpg",
+  };
+}
+
+export async function buildFinaOrderItems(cartItems: CartItem[]) {
+  const orderItems: {
+    productId: string;
+    qty: number;
+    price: number;
+    title: string;
+    image: string;
+  }[] = [];
+
+  for (const item of cartItems) {
+    const qty = parseInt(String(item.qty), 10);
+    if (!Number.isInteger(qty) || qty <= 0) {
+      throw new Error("Invalid quantity");
+    }
+
+    const productData = await getFinaServerPrice(item.productId);
+    if (!productData) {
+      throw new Error(`Invalid product or price: ${item.productId}`);
+    }
+
+    orderItems.push({
+      productId: String(item.productId),
+      qty,
+      price: productData.price,
+      title: item.name || productData.title,
+      image: item.image || productData.image,
+    });
+  }
+
+  return orderItems;
 }

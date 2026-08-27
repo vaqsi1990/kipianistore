@@ -6,6 +6,8 @@ import { sendOrderToAdmin } from '@/lib/email';
 import { getCartForUser, validateDeliveryForCart } from '@/lib/cart-helpers';
 import { CartItem } from '@/lib/types';
 import { decrementOrderStock } from '@/lib/stock-utils';
+import { buildFinaOrderItems } from '@/lib/fina-cart';
+import { Prisma } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,28 +47,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const shippingPrice = 0;
-    
-    // Create order items from cart items
-    const orderItems = cart.items.map((item: any) => ({
-      productId: item.productId,
-      qty: item.qty,
-      price: parseFloat(item.price),
-      title: item.name,
-      image: item.image
-    }));
+    let orderItems;
+    try {
+      orderItems = await buildFinaOrderItems(cartItems);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Invalid FINA product in cart' },
+        { status: 400 }
+      );
+    }
 
-    // Create the order
+    const itemsPrice = parseFloat(
+      orderItems
+        .reduce((sum, item) => sum + item.price * item.qty, 0)
+        .toFixed(2)
+    );
+    const shippingPrice = 0;
+    const taxPrice = 0;
+
     const order = await prisma.order.create({
       data: {
         userId: session.user.id,
         shippingAddress: shippingAddress,
         paymentMethod: paymentMethod,
-        itemsPrice: cart.itemsPrice,
-        shippingPrice: shippingPrice,
-        taxPrice: cart.taxPrice,
-        totalPrice: parseFloat(cart.itemsPrice.toString()) + parseFloat(cart.taxPrice.toString()) + shippingPrice,
-        deliveryLocation: deliveryOption, // Save the selected delivery city/location
+        itemsPrice: new Prisma.Decimal(itemsPrice),
+        shippingPrice: new Prisma.Decimal(shippingPrice),
+        taxPrice: new Prisma.Decimal(taxPrice),
+        totalPrice: new Prisma.Decimal(itemsPrice),
+        deliveryLocation: deliveryOption,
         orderitems: {
           create: orderItems
         }

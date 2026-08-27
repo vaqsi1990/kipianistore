@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
         qty,
         price: productData.price,
         title: item.name || productData.title,
-        image: item.image,
+        image: item.image || productData.image,
       });
     }
 
