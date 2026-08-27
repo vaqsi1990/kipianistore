@@ -75,9 +75,9 @@ export const finaProductOverrideSchema = z.object({
   images: z.array(z.string().min(1)).max(10),
   title: z.string().min(2).max(200),
   titleEn: z.string().min(2).max(200),
-  description: z.string().optional().default(""),
-  descriptionEn: z.string().optional().default(""),
-  brand: z.string().optional().default(""),
+  description: z.string(),
+  descriptionEn: z.string(),
+  brand: z.string(),
 });
 
 export const updateProductSchema = BaseProductSchema.extend({

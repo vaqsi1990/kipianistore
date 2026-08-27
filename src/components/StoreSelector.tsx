@@ -11,6 +11,7 @@ type Store = {
   slug: string;
   nameKa: string;
   nameEn: string;
+  address?: string;
 };
 
 const STORE_COOKIE = "selectedStore";
@@ -31,8 +32,13 @@ export default function StoreSelector() {
   const [selected, setSelected] = useState("all");
 
   useEffect(() => {
-    setSelected(readStoreCookie());
-    getActiveStores().then(setStores);
+    getActiveStores().then((list) => {
+      setStores(list);
+      const cookie = readStoreCookie();
+      const valid = cookie === "all" || list.some((store) => store.slug === cookie);
+      setSelected(valid ? cookie : "all");
+      if (!valid) writeStoreCookie("all");
+    });
   }, []);
 
   const handleChange = (slug: string) => {
@@ -56,6 +62,7 @@ export default function StoreSelector() {
         {stores.map((store) => (
           <option key={store.id} value={store.slug}>
             {getStoreLabel(store, locale)}
+            {store.address ? ` — ${store.address}` : ""}
           </option>
         ))}
       </select>

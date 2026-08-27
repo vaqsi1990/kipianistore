@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "../prisma";
 import { requireAdmin } from "../auth-helpers";
+import { getFinaStoreList } from "../fina";
 import {
   DEFAULT_STORES,
   legacyFlagsFromSlugs,
@@ -29,26 +30,18 @@ const storeSchema = z.object({
 });
 
 export async function getActiveStores() {
-  try {
-    return await prisma.store.findMany({
-      where: { isActive: true },
-      orderBy: [{ sortOrder: "asc" }, { nameKa: "asc" }],
-    });
-  } catch (error) {
-    console.error("Error fetching stores, using defaults:", error);
-    return DEFAULT_STORES.map((store) => ({
-      id: store.slug,
-      slug: store.slug,
-      nameKa: store.nameKa,
-      nameEn: store.nameEn,
-      address: store.address,
-      city: store.city,
-      sortOrder: store.sortOrder,
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }));
-  }
+  return getFinaStoreList().map((store, index) => ({
+    id: store.slug,
+    slug: store.slug,
+    nameKa: store.nameKa,
+    nameEn: store.nameEn,
+    address: store.address,
+    city: store.city,
+    sortOrder: index,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }));
 }
 
 export async function getAllStoresAdmin() {

@@ -27,8 +27,10 @@ type FormValues = z.infer<typeof finaProductOverrideSchema>;
 
 export default function EditProductForm({
   product,
+  mode = "edit",
 }: {
   product: FinaProductEditData;
+  mode?: "edit" | "create";
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -40,9 +42,9 @@ export default function EditProductForm({
       images: product.images,
       title: product.title,
       titleEn: product.titleEn,
-      description: product.description,
-      descriptionEn: product.descriptionEn,
-      brand: product.brand,
+      description: product.description ?? "",
+      descriptionEn: product.descriptionEn ?? "",
+      brand: product.brand ?? "",
     },
   });
 
@@ -60,9 +62,13 @@ export default function EditProductForm({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">პროდუქტის რედაქტირება</h2>
+        <h2 className="text-2xl font-bold text-gray-900">
+          {mode === "create" ? "პროდუქტის დამატება" : "პროდუქტის რედაქტირება"}
+        </h2>
         <p className="text-gray-600">
-          სურათები, სახელი და აღწერა ინახება საიტზე. ფასი და მარაგი მოდის FINA-დან.
+          {mode === "create"
+            ? "ატვირთეთ სურათები და შეავსეთ სახელი/აღწერა. ფასი და მარაგი მოდის FINA-დან."
+            : "სურათები, სახელი და აღწერა ინახება საიტზე. ფასი და მარაგი მოდის FINA-დან."}
         </p>
       </div>
 
@@ -199,7 +205,11 @@ export default function EditProductForm({
               disabled={form.formState.isSubmitting}
               className="w-full px-4 py-2 text-[20px] font-bold text-white bg-[#438c71] rounded-lg hover:bg-[#3a7a5f] transition-colors"
             >
-              {form.formState.isSubmitting ? "ინახება..." : "შენახვა"}
+              {form.formState.isSubmitting
+                ? "ინახება..."
+                : mode === "create"
+                  ? "დამატება"
+                  : "შენახვა"}
             </Button>
             <Button
               type="button"

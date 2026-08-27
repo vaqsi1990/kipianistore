@@ -6,7 +6,9 @@ import { prisma } from "../prisma";
 import { requireAdmin } from "../auth-helpers";
 import { finaProductOverrideSchema } from "../validators";
 import {
+  getFinaCatalog,
   getFinaProductById,
+  hasFinaStock,
   invalidateFinaCatalogCache,
   isRemoteProductImage,
 } from "../fina";
@@ -35,6 +37,41 @@ function formatError(error: unknown) {
   }
   if (error instanceof Error) return error.message;
   return "Operation failed";
+}
+
+export type FinaProductSearchHit = {
+  id: string;
+  code: string;
+  title: string;
+  titleEn: string;
+  category: string;
+  price: number;
+  inStock: boolean;
+  hasCustomImages: boolean;
+};
+
+export async function searchFinaProducts(query: string): Promise<FinaProductSearchHit[]> {
+  await requireAdmin();
+  const catalog = await getFinaCatalog();
+  const q = query.trim().toLowerCase();
+  const matched = q
+    ? catalog.filter((product) => {
+        const haystack =
+          `${product.title} ${product.titleEn} ${product.code} ${product.brand}`.toLowerCase();
+        return haystack.includes(q);
+      })
+    : catalog;
+
+  return matched.slice(0, 40).map((product) => ({
+    id: product.id,
+    code: product.code,
+    title: product.title,
+    titleEn: product.titleEn,
+    category: product.category,
+    price: Number(product.price || 0),
+    inStock: hasFinaStock(product),
+    hasCustomImages: (product.images || []).some(isRemoteProductImage),
+  }));
 }
 
 export async function getFinaProductForEdit(

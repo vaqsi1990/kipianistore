@@ -2,13 +2,14 @@
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "../prisma";
-import { ProductSchema, updateProductSchema } from "../validators";
+import { updateProductSchema, finaProductOverrideSchema } from "../validators";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { requireAdmin } from "../auth-helpers";
 import { cookies } from "next/headers";
 import { syncProductStores } from "./store.actions";
 import { getProductStoreSlugs } from "../store-utils";
 import { filterFinaCatalog, getFinaCatalog, getFinaProductById, hasFinaStock } from "../fina";
+import { updateFinaProductOverride } from "./fina-product.actions";
 
 export async function convertToPlainObject<T>(value: T): Promise<T> {
   return JSON.parse(JSON.stringify(value));
@@ -62,58 +63,8 @@ export async function formatError(error: any) {
   }
 }
 
-export async function createProduct(data: z.infer<typeof ProductSchema>) {
-  try {
-    await requireAdmin();
-    const product = ProductSchema.parse(data);
-
-    const normalizedCategory =
-      product.category === "bundle" ? "bundle" : product.category;
-    const { sizes, storeIds, storeStock, ...productData } = product;
-
-    const createData: any = {
-      ...productData,
-      category: normalizedCategory as any,
-    };
-    delete createData.storeIds;
-    delete createData.storeStock;
-
-    // Handle price for OTHERS category or sizes for other categories
-    if (product.category === "OTHERS") {
-      createData.price = new Prisma.Decimal(product.price!);
-    } else {
-      createData.sizes = {
-        create: sizes!.map((sizeData) => ({
-          size: sizeData.size,
-          price: new Prisma.Decimal(sizeData.price),
-        })),
-      };
-    }
-
-    const createdProduct = await prisma.product.create({
-      data: createData,
-      include: {
-        sizes: true,
-      },
-    });
-
-    const stockEntries =
-      storeStock?.length
-        ? storeStock
-        : storeIds?.map((storeId) => ({ storeId, stock: 1 })) ?? [];
-
-    if (stockEntries.length) {
-      await syncProductStores(createdProduct.id, stockEntries);
-    }
-
-    revalidatePath("/admin");
-    revalidateTag("products");
-
-    return { success: true, message: "Product created successfully" };
-  } catch (error) {
-    console.error("Error in createProduct:", error);
-    return { success: false, message: formatError(error) };
-  }
+export async function createProduct(data: z.infer<typeof finaProductOverrideSchema>) {
+  return updateFinaProductOverride(data);
 }
 
 export async function deleteProduct(id: string) {
