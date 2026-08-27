@@ -236,7 +236,7 @@ const ListSideBar: React.FC<FilterProps> = ({ isOpen, toggleSidebar, onFilterCha
             </div>
           </div>
 
-          {/* Buttons */}
+         
           <div className="pt-4 border-t space-y-2">
             <button
               onClick={applyFilters} 

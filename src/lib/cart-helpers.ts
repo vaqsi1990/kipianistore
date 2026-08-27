@@ -6,15 +6,14 @@ import {
   getAvailableStoreSlugsFromCart,
   getStoreLabel,
   DEFAULT_STORES,
-  legacyFlagsFromSlugs,
 } from "./store-utils";
 import { validateCartStockAtStore } from "./stock-utils";
 import {
   getFinaProductById,
   getFinaStoreList,
-  getFinaStoreSlugs,
   isKnownFinaStoreSlug,
 } from "./fina";
+import { finaProductToCartItem } from "./fina-cart";
 
 export async function getCartForUser(userId: string): Promise<Cart | null> {
   const cookieStore = await cookies();
@@ -43,17 +42,7 @@ export async function getCartForUser(userId: string): Promise<Cart | null> {
 export async function enrichCartItem(item: CartItem): Promise<CartItem> {
   const product = await getFinaProductById(item.productId);
   if (!product) return item;
-
-  const storeSlugs = getFinaStoreSlugs(product);
-  const flags = legacyFlagsFromSlugs(storeSlugs);
-
-  return {
-    ...item,
-    name: product.title || item.name,
-    image: product.images[0] || item.image,
-    storeSlugs,
-    ...flags,
-  };
+  return finaProductToCartItem(product, item.size, item.qty);
 }
 
 export async function enrichCartItems(items: CartItem[]): Promise<CartItem[]> {

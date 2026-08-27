@@ -13,7 +13,11 @@ import { toast } from 'sonner';
 import { useCart } from '@/lib/context/CartContext';
 import Image from 'next/image';
 import { getActiveStores } from '@/lib/actions/store.actions';
-import { getAvailableStoreSlugsFromCart, getStoreLabel } from '@/lib/store-utils';
+import { getStoreLabel } from '@/lib/store-utils';
+import {
+  getFinaSummaryItems,
+  type FinaSummaryItem,
+} from '@/lib/actions/checkout.actions';
 
 interface Cart {
   id: string;
@@ -57,6 +61,8 @@ const SummaryPage = () => {
     address: string;
     city: string;
   }>>([]);
+  const [finaItems, setFinaItems] = useState<FinaSummaryItem[]>([]);
+  const [finaLoading, setFinaLoading] = useState(false);
 
   // Load address data from sessionStorage
   useEffect(() => {
@@ -99,18 +105,69 @@ const SummaryPage = () => {
     getActiveStores().then(setStores);
   }, []);
 
-  const calculateDeliveryPrice = (location: string) => {
-    // All listed locations are always free
+  useEffect(() => {
+    if (!cart?.items?.length) {
+      setFinaItems([]);
+      return;
+    }
+
+    let cancelled = false;
+    setFinaLoading(true);
+    getFinaSummaryItems(
+      cart.items.map((item) => ({
+        productId: item.productId,
+        qty: item.qty,
+        size: item.size,
+      }))
+    )
+      .then((items) => {
+        if (!cancelled) setFinaItems(items);
+      })
+      .catch((error) => {
+        console.error('Error loading FINA summary items:', error);
+        if (!cancelled) setFinaItems([]);
+      })
+      .finally(() => {
+        if (!cancelled) setFinaLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cart?.items]);
+
+  const calculateDeliveryPrice = (_location: string) => {
     return 0;
   };
 
-  const calculateTotalPrice = () => {
+  const itemsSubtotal = useMemo(() => {
+    if (finaItems.length > 0) {
+      return finaItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+    }
     if (!cart) return 0;
-    const itemsPrice = parseFloat(cart.itemsPrice);
-    const taxPrice = parseFloat(cart.taxPrice);
-    const deliveryPrice = calculateDeliveryPrice(deliveryOption);
-    return itemsPrice + taxPrice + deliveryPrice;
+    return cart.items.reduce(
+      (sum, item) => sum + parseFloat(item.price) * item.qty,
+      0
+    );
+  }, [finaItems, cart]);
+
+  const calculateTotalPrice = () => {
+    return itemsSubtotal + calculateDeliveryPrice(deliveryOption);
   };
+
+  const isPlaceholderSize = (size?: string) => {
+    if (!size) return true;
+    const normalized = size.trim().toUpperCase().replace('SIZE_', '');
+    return normalized === 'N/A' || normalized === 'NA' || normalized === '-';
+  };
+
+  const getItemTitle = (item: FinaSummaryItem) =>
+    locale === 'en'
+      ? item.titleEn || item.title
+      : item.title || item.titleEn;
+
+  const getItemStoreStock = (item: FinaSummaryItem, slug: string) =>
+    item.storeAvailability.find((store) => store.slug === slug);
 
   const handlePlaceOrder = async () => {
     if (!address || !deliveryOption || !paymentMethod) {
@@ -179,9 +236,19 @@ const SummaryPage = () => {
   };
 
   const availableLocations = useMemo(() => {
-    if (!cart?.items) return [];
-    return getAvailableStoreSlugsFromCart(cart.items);
-  }, [cart?.items]);
+    const sourceItems = finaItems.length > 0 ? finaItems : [];
+    if (sourceItems.length === 0) return [];
+
+    const slugSets = sourceItems.map((item) =>
+      item.storeAvailability
+        .filter((store) => store.stock >= item.qty)
+        .map((store) => store.slug)
+    );
+
+    return slugSets.reduce((common, current) =>
+      common.filter((slug) => current.includes(slug))
+    );
+  }, [finaItems]);
 
   const deliveryStores = useMemo(() => {
     return stores.filter((store) => availableLocations.includes(store.slug));
@@ -203,7 +270,7 @@ const SummaryPage = () => {
     }
   }, [address, deliveryStores, deliveryOption]);
 
-  if (loading) {
+  if (loading || (cart && cart.items.length > 0 && finaLoading && finaItems.length === 0)) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
@@ -302,17 +369,17 @@ const SummaryPage = () => {
         <div className="mb-8 text-center md:text-left">
           <div className="flex items-center justify-between mb-4">
             <Link className="mx-auto" href={`/checkout/personal`}>
-              <Button variant="ghost" className="flex text-[20px] text-center items-center md:items-center gap-2">
+              <Button variant="ghost" className="flex text-[20px] text-white hover:text-white text-center items-center md:items-center gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 {t('checkout.backToPersonal')}
               </Button>
             </Link>
 
           </div>
-          <h1 className="text-[20px] md:text-3xl font-bold text-gray-900">
+          <h1 className="text-[20px] md:text-3xl font-bold text-white">
             {t('checkout.orderSummary')}
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-white mt-2">
             {t('checkout.orderSummaryDescription')}
           </p>
         </div>
@@ -359,7 +426,17 @@ const SummaryPage = () => {
                     <p className="text-sm text-gray-600 mb-3">
                       {t('checkout.deliveryPricingNote')}
                     </p>
-                    {deliveryStores.map((store) => (
+                    {deliveryStores.map((store) => {
+                      const minStock = finaItems.length
+                        ? Math.min(
+                            ...finaItems.map(
+                              (item) =>
+                                getItemStoreStock(item, store.slug)?.stock ?? 0
+                            )
+                          )
+                        : 0;
+
+                      return (
                       <label
                         key={store.id}
                         className="flex items-center space-x-3 cursor-pointer"
@@ -380,9 +457,15 @@ const SummaryPage = () => {
                           <span className="text-[#438c71] font-semibold ml-2">
                             - {t('checkout.free')}
                           </span>
+                          {finaItems.length > 0 ? (
+                            <span className="block text-xs text-gray-500">
+                              {t('checkout.inStock')}: {minStock}
+                            </span>
+                          ) : null}
                         </div>
                       </label>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -466,31 +549,107 @@ const SummaryPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {cart.items.map((item) => (
-                    <div key={`${item.productId}-${item.size}`} className="flex items-center space-x-4">
+                  {(finaItems.length > 0 ? finaItems : cart.items.map((item) => ({
+                    productId: item.productId,
+                    qty: item.qty,
+                    size: item.size,
+                    title: item.name,
+                    titleEn: item.name,
+                    code: '',
+                    brand: '',
+                    category: '',
+                    image: item.image,
+                    price: parseFloat(item.price),
+                    originalPrice: parseFloat(item.price),
+                    sales: 0,
+                    storeAvailability: [],
+                  }))).map((item) => {
+                    const selectedStoreStock = deliveryOption
+                      ? getItemStoreStock(item, deliveryOption)
+                      : undefined;
+                    const inStockStores = item.storeAvailability.filter(
+                      (store) => store.stock > 0
+                    );
+
+                    return (
+                    <div
+                      key={`${item.productId}-${item.size}`}
+                      className="flex items-start space-x-4 pb-4 border-b border-gray-100 last:border-b-0 last:pb-0"
+                    >
                       <Image
                         src={item.image}
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded-md"
-                        width={64}
-                        height={64}
+                        alt={getItemTitle(item)}
+                        className="w-20 h-20 object-cover rounded-md"
+                        width={80}
+                        height={80}
                       />
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{item.name}</h3>
-                        <p className="text-sm text-gray-600">
-                          {t('checkout.size')}: {formatSize(item.size)}
-                        </p>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold">{getItemTitle(item)}</h3>
+                        {item.code ? (
+                          <p className="text-sm text-gray-600">
+                            {t('checkout.productCode')}: {item.code}
+                          </p>
+                        ) : null}
+                        {item.brand ? (
+                          <p className="text-sm text-gray-600">
+                            {t('checkout.brand')}: {item.brand}
+                          </p>
+                        ) : null}
+                        {item.category ? (
+                          <p className="text-sm text-gray-600">
+                            {t('checkout.category')}: {item.category}
+                          </p>
+                        ) : null}
+                        {!isPlaceholderSize(item.size) ? (
+                          <p className="text-sm text-gray-600">
+                            {t('checkout.size')}: {formatSize(item.size)}
+                          </p>
+                        ) : null}
                         <p className="text-sm text-gray-600">
                           {t('checkout.quantity')}: {item.qty}
                         </p>
+                        <p className="text-sm text-gray-600">
+                          {t('checkout.unitPrice')}: {formatPrice(item.price.toString())}
+                          {item.sales > 0 && item.originalPrice > item.price ? (
+                            <span className="ml-2 text-gray-400 line-through">
+                              {formatPrice(item.originalPrice.toString())}
+                            </span>
+                          ) : null}
+                        </p>
+                        {selectedStoreStock ? (
+                          <p
+                            className={`text-sm ${
+                              selectedStoreStock.stock >= item.qty
+                                ? 'text-[#438c71]'
+                                : 'text-red-500'
+                            }`}
+                          >
+                            {t('checkout.stockAtStore')}: {selectedStoreStock.stock}{' '}
+                            ({selectedStoreStock.stock >= item.qty
+                              ? t('checkout.inStock')
+                              : t('checkout.outOfStock')})
+                          </p>
+                        ) : null}
+                        {inStockStores.length > 0 ? (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {t('checkout.availableAt')}:{' '}
+                            {inStockStores
+                              .map(
+                                (store) =>
+                                  `${getStoreLabel(store, locale)} (${store.stock})`
+                              )
+                              .join(', ')}
+                          </p>
+                        ) : null}
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-[#438c71]">
-                          {formatPrice((parseFloat(item.price) * item.qty).toString())}
+                          {formatPrice((item.price * item.qty).toString())}
                         </p>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -509,7 +668,7 @@ const SummaryPage = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-bold text-[18px]">{t('checkout.subtotal')}</span>
-                    <span className="font-semibold">{formatPrice(cart.itemsPrice)}</span>
+                    <span className="font-semibold">{formatPrice(itemsSubtotal.toString())}</span>
                   </div>
 
                   <div className="flex justify-between">
@@ -522,7 +681,7 @@ const SummaryPage = () => {
                   <div className="flex justify-between text-lg font-bold">
                     <span className="text-bold text-[18px]">{t('checkout.total')}</span>
                     <span className="text-[#438c71]">
-                      {deliveryOption ? formatPrice(calculateTotalPrice().toString()) : formatPrice(cart.totalPrice)}
+                      {formatPrice(calculateTotalPrice().toString())}
                     </span>
                   </div>
                 </div>
