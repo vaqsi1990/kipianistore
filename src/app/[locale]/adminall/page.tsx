@@ -266,6 +266,7 @@ export default async function AdminAllPage() {
                     price: product.price,
                     sales: product.sales,
                     popular: product.popular,
+                    inStock: product.storeAvailability.some((store) => store.inStock),
                     tbilisi: product.tbilisi,
                     batumi: product.batumi,
                     batumi44: product.batumi44,

@@ -70,6 +70,16 @@ export const ProductSchema = BaseProductSchema.refine((data) => {
   path: ["category"]
 });
 
+export const finaProductOverrideSchema = z.object({
+  finaId: z.string().min(1),
+  images: z.array(z.string().min(1)).max(10),
+  title: z.string().min(2).max(200),
+  titleEn: z.string().min(2).max(200),
+  description: z.string().optional().default(""),
+  descriptionEn: z.string().optional().default(""),
+  brand: z.string().optional().default(""),
+});
+
 export const updateProductSchema = BaseProductSchema.extend({
   id: z.string().min(1, "Id is required"),
 }).refine((data) => {

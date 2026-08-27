@@ -237,3 +237,16 @@ model OrderItem {
 
   @@id([orderId, productId], map: "orderitems_orderId_productId_pk")
 }
+
+model FinaProductOverride {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  finaId        String   @unique
+  images        String[] @default([])
+  title         String?
+  titleEn       String?
+  description   String?
+  descriptionEn String?
+  brand         String?
+  createdAt     DateTime @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime @updatedAt
+}

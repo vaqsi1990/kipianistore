@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { FaChevronLeft, FaChevronRight, FaEye, FaPlus, FaSearch } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaEye, FaPen, FaPlus, FaSearch } from "react-icons/fa";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ export type AdminProductRow = {
   price?: number;
   sales?: number;
   popular: boolean;
+  inStock: boolean;
   tbilisi: boolean;
   batumi: boolean;
   batumi44: boolean;
@@ -48,12 +49,15 @@ export default function AdminProductsTable({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter((product) => {
-      const title = product.title?.toLowerCase() || "";
-      const titleEn = product.titleEn?.toLowerCase() || "";
-      return title.includes(q) || titleEn.includes(q);
-    });
+    const matched = !q
+      ? products
+      : products.filter((product) => {
+          const title = product.title?.toLowerCase() || "";
+          const titleEn = product.titleEn?.toLowerCase() || "";
+          return title.includes(q) || titleEn.includes(q);
+        });
+
+    return [...matched].sort((a, b) => Number(b.inStock) - Number(a.inStock));
   }, [products, query]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -193,15 +197,26 @@ export default function AdminProductsTable({
                       </div>
                     </td>
                     <td className="p-4">
-                      <Link href={`/products/${product.id}`}>
-                        <Button
-                          className="px-4 py-2 text-[20px] font-bold text-white bg-[#869dab] rounded-lg hover:bg-[#3a7a5f] transition-colors"
-                          size="sm"
-                          variant="outline"
-                        >
-                          <FaEye className="w-3 h-3" />
-                        </Button>
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/products/${product.id}`}>
+                          <Button
+                            className="px-3 py-2 font-bold text-white bg-[#869dab] rounded-lg hover:bg-[#3a7a5f] transition-colors"
+                            size="sm"
+                            variant="outline"
+                          >
+                            <FaEye className="w-3 h-3" />
+                          </Button>
+                        </Link>
+                        <Link href={`/edit?id=${product.id}`}>
+                          <Button
+                            className="px-3 py-2 font-bold text-white bg-[#438c71] rounded-lg hover:bg-[#3a7a5f] transition-colors"
+                            size="sm"
+                            variant="outline"
+                          >
+                            <FaPen className="w-3 h-3" />
+                          </Button>
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}

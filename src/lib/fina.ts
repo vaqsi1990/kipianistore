@@ -1,3 +1,5 @@
+import { prisma } from "./prisma";
+
 const RETAIL_PRICE_ID = Number(process.env.FINA_RETAIL_PRICE_ID || 3);
 const CACHE_TTL_MS = 2 * 60 * 1000;
 
@@ -302,6 +304,42 @@ function mapProducts(
   return mapped.sort((a, b) => Number(b.id) - Number(a.id));
 }
 
+export function isRemoteProductImage(url: string) {
+  return /^https?:\/\//i.test(url);
+}
+
+export function invalidateFinaCatalogCache() {
+  catalogCache = null;
+  catalogPromise = null;
+}
+
+async function applyFinaOverrides(products: FinaCatalogProduct[]) {
+  try {
+    const overrides = await prisma.finaProductOverride.findMany();
+    if (!overrides.length) return products;
+
+    const byId = new Map(overrides.map((row) => [row.finaId, row]));
+    return products.map((product) => {
+      const override = byId.get(product.id);
+      if (!override) return product;
+
+      const images = (override.images || []).filter(isRemoteProductImage);
+      return {
+        ...product,
+        title: override.title?.trim() || product.title,
+        titleEn: override.titleEn?.trim() || product.titleEn,
+        description: override.description ?? product.description,
+        descriptionEn: override.descriptionEn ?? product.descriptionEn,
+        brand: override.brand?.trim() || product.brand,
+        images: images.length ? images : product.images,
+      };
+    });
+  } catch (error) {
+    console.error("FINA product overrides failed to load:", error);
+    return products;
+  }
+}
+
 async function loadCatalog(): Promise<FinaCatalogProduct[]> {
   const [productsRes, pricesRes, restRes] = await Promise.all([
     finaGet<{ products?: FinaRawProduct[] }>("/api/operation/getProducts"),
@@ -309,10 +347,12 @@ async function loadCatalog(): Promise<FinaCatalogProduct[]> {
     finaGet<{ rest?: FinaRest[] }>("/api/operation/getProductsRest"),
   ]);
 
-  return mapProducts(
-    productsRes.products || [],
-    pricesRes.prices || [],
-    restRes.rest || []
+  return applyFinaOverrides(
+    mapProducts(
+      productsRes.products || [],
+      pricesRes.prices || [],
+      restRes.rest || []
+    )
   );
 }
 

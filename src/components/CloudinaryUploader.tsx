@@ -3,7 +3,7 @@
 "use client";
 
 import { UploadButton } from "@/utils/uploadthing";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { Loader2,  Upload, Image as ImageIcon, Edit2, Trash2 } from "lucide-react";
 
@@ -30,6 +30,10 @@ const ImageUpload = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setImageUrls(value || []);
+  }, [value]);
 
   const handleUploadComplete = useCallback((res: any[]) => {
     const urls = res.map((file) => file.url);
@@ -128,6 +132,7 @@ const ImageUpload = ({
                 />
                 {isEditing && (
                   <button
+                    type="button"
                     onClick={cancelEdit}
                     className="block mx-auto text-sm text-gray-500 hover:text-gray-700 mt-2"
                   >
@@ -187,6 +192,7 @@ const ImageUpload = ({
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   {allowEdit && editingIndex !== index && (
                     <button
+                      type="button"
                       onClick={() => startEditImage(index)}
                       className="bg-blue-500 text-white rounded-full p-1 hover:bg-blue-600 transition-colors"
                       title="Replace image"
@@ -196,6 +202,7 @@ const ImageUpload = ({
                   )}
                   {allowDelete && (
                     <button
+                      type="button"
                       onClick={() => removeImage(index)}
                       className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
                       title="Remove image"
