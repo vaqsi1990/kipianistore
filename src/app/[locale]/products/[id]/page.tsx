@@ -426,38 +426,38 @@ const Page = (props: { params: { id: string; locale: string } }) => {
               {/* Add to Cart Button */}
               {session && (
                 <div className="pt-1">
-                  <button
+                  <Button
                     onClick={handleAddToCart}
                     disabled={
                       (!isOthersProduct() && !selectedSize) ||
                       addingToCart ||
                       !canBuyAtSelectedStore
                     }
-                    className={`w-full md:w-[50%] px-4 py-2 text-[20px] md:text-[20px] font-bold text-white bg-[#bbb272] rounded-lg  transition-colors ${
+                    variant="outline"
+                    className={`w-full md:w-auto md:min-w-0 px-4 md:px-8 py-2 text-[20px] font-bold text-white rounded-lg transition-colors ${
                       (isOthersProduct() || selectedSize) &&
                       !addingToCart &&
                       canBuyAtSelectedStore
                         ? "bg-[#bbb272] text-white"
-                        : "bg-gray-400 cursor-not-allowed"
+                        : "bg-gray-400 cursor-not-allowed border-gray-400"
                     }`}
                   >
-                    <span>
-                      {addingToCart
-                        ? "დამატება..."
-                        : !canBuyAtSelectedStore
-                          ? locale === "en"
-                            ? "Not available here"
-                            : "ამ ფილიალში არ არის"
-                          : getTranslation("product.addToCart", "Add to Cart")}
-                    </span>
-                  </button>
+                    {addingToCart
+                      ? "დამატება..."
+                      : !canBuyAtSelectedStore
+                        ? locale === "en"
+                          ? "Not available here"
+                          : "ამ ფილიალში არ არის"
+                        : getTranslation("product.addToCart", "Add to Cart")}
+                  </Button>
                 </div>
               )}
               {!session && (
                 <div className="pt-1">
                   <Button
+                    asChild
                     variant="outline"
-                    className="w-full px-4 mb-10 py-2 text-[20px] font-bold text-white bg-[#bbb272] rounded-lg  transition-colors"
+                    className="w-full md:w-auto md:min-w-0 px-4 md:px-8 mb-10 py-2 text-[20px] font-bold text-white bg-[#bbb272] rounded-lg transition-colors"
                   >
                     <Link href="/sign-in">შედით თქვენ აქაუნთზე</Link>
                   </Button>
