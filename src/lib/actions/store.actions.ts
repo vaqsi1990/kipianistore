@@ -29,10 +29,26 @@ const storeSchema = z.object({
 });
 
 export async function getActiveStores() {
-  return prisma.store.findMany({
-    where: { isActive: true },
-    orderBy: [{ sortOrder: "asc" }, { nameKa: "asc" }],
-  });
+  try {
+    return await prisma.store.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { nameKa: "asc" }],
+    });
+  } catch (error) {
+    console.error("Error fetching stores, using defaults:", error);
+    return DEFAULT_STORES.map((store) => ({
+      id: store.slug,
+      slug: store.slug,
+      nameKa: store.nameKa,
+      nameEn: store.nameEn,
+      address: store.address,
+      city: store.city,
+      sortOrder: store.sortOrder,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+  }
 }
 
 export async function getAllStoresAdmin() {

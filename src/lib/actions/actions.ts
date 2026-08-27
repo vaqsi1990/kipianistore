@@ -8,6 +8,7 @@ import { requireAdmin } from "../auth-helpers";
 import { cookies } from "next/headers";
 import { syncProductStores } from "./store.actions";
 import { getProductStoreSlugs } from "../store-utils";
+import { filterFinaCatalog, getFinaCatalog } from "../fina";
 
 export async function convertToPlainObject<T>(value: T): Promise<T> {
   return JSON.parse(JSON.stringify(value));
@@ -228,122 +229,28 @@ async function fetchProductsFromDb(
   filters: Record<string, unknown> | undefined,
   selectedStore: string
 ) {
-  const where: Record<string, unknown> = {};
-
-  if (selectedStore && selectedStore !== "all") {
-    where.stores = {
-      some: {
-        store: {
-          slug: selectedStore,
-          isActive: true,
-        },
-        stock: { gt: 0 },
-      },
-    };
-  } else if (filters?.inStock === true) {
-    where.stores = {
-      some: {
-        stock: { gt: 0 },
-      },
-    };
-  }
-
-  if (filters?.category) {
-    where.category = String(filters.category).toUpperCase();
-  }
-
-  if (filters?.brands && Array.isArray(filters.brands) && filters.brands.length > 0) {
-    where.brand = { in: filters.brands };
-  }
-
-  if (filters?.minPrice || filters?.maxPrice) {
-    where.OR = [
-      {
-        price: {
-          gte: Number(filters.minPrice) || 0,
-          lte: Number(filters.maxPrice) || 999999,
-        },
-      },
-      {
-        sizes: {
-          some: {
-            price: {
-              gte: Number(filters.minPrice) || 0,
-              lte: Number(filters.maxPrice) || 999999,
-            },
-          },
-        },
-      },
-    ];
-  }
-
-  if (filters?.query) {
-    where.OR = [
-      { title: { contains: String(filters.query), mode: "insensitive" } },
-      { titleEn: { contains: String(filters.query), mode: "insensitive" } },
-      { brand: { contains: String(filters.query), mode: "insensitive" } },
-    ];
-  }
-
-  if (filters?.popular === true) {
-    where.popular = true;
-  }
-
-  if (filters?.onSale === true) {
-    where.sales = { gt: 0 };
-  }
-
-  const [products, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      skip: getAll ? 0 : (page - 1) * pageSize,
-      take: getAll ? undefined : pageSize,
-      select: {
-        id: true,
-        title: true,
-        titleEn: true,
-        category: true,
-        images: true,
-        brand: true,
-        price: true,
-        sales: true,
-        popular: true,
-        createdAt: true,
-        sizes: {
-          select: { price: true },
-          orderBy: { price: "asc" },
-          take: 1,
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.product.count({ where }),
-  ]);
-
-  const productsWithMinPrice = products.map((product) => {
-    const minSizePrice = product.sizes[0]
-      ? Number(product.sizes[0].price)
-      : undefined;
-
-    return {
-      id: product.id,
-      title: product.title,
-      titleEn: product.titleEn,
-      category: product.category,
-      images: product.images,
-      brand: product.brand,
-      price: product.price ? Number(product.price) : undefined,
-      sales: product.sales ?? undefined,
-      popular: product.popular,
-      createdAt: product.createdAt,
-      minSizePrice,
-      sizes: product.sizes.map((size) => ({
-        price: Number(size.price),
-      })),
-    };
+  const catalog = await getFinaCatalog();
+  const filtered = filterFinaCatalog(catalog, {
+    category: filters?.category as string | undefined,
+    brands: filters?.brands as string[] | undefined,
+    minPrice: filters?.minPrice as number | undefined,
+    maxPrice: filters?.maxPrice as number | undefined,
+    query: filters?.query as string | undefined,
+    inStock: filters?.inStock as boolean | undefined,
+    popular: filters?.popular as boolean | undefined,
+    onSale: filters?.onSale as boolean | undefined,
+    storeSlug: selectedStore,
   });
 
-  return { products: productsWithMinPrice, total };
+  const total = filtered.length;
+  const pageItems = getAll
+    ? filtered
+    : filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  return {
+    products: pageItems,
+    total,
+  };
 }
 
 const getCachedProducts = unstable_cache(
@@ -381,44 +288,27 @@ export async function getAllProducts(page = 1, pageSize = 20, getAll = false, fi
 }
 
 export async function getProductById(productId: string) {
-  const data = await prisma.product.findFirst({
-    where: { id: productId },
-    include: {
-      sizes: true,
-      stores: {
-        include: {
-          store: true,
-        },
-      },
-    },
-  });
+  try {
+    const catalog = await getFinaCatalog();
+    const product = catalog.find((item) => item.id === String(productId));
+    if (product) {
+      return {
+        ...product,
+        storeIds: product.storeAvailability.map((entry) => entry.storeId),
+        storeStock: product.storeAvailability.map((entry) => ({
+          storeId: entry.storeId,
+          stock: entry.stock,
+        })),
+        storeSlugs: product.storeAvailability
+          .filter((entry) => entry.inStock)
+          .map((entry) => entry.slug),
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching FINA product:", error);
+  }
 
-  if (!data) return null;
-
-  return {
-    ...data,
-    price: data.price ? Number(data.price) : undefined,
-    storeIds: data.stores.map((entry) => entry.storeId),
-    storeStock: data.stores.map((entry) => ({
-      storeId: entry.storeId,
-      stock: entry.stock,
-    })),
-    storeAvailability: data.stores.map((entry) => ({
-      storeId: entry.storeId,
-      slug: entry.store.slug,
-      nameKa: entry.store.nameKa,
-      nameEn: entry.store.nameEn,
-      address: entry.store.address,
-      city: entry.store.city,
-      stock: entry.stock,
-      inStock: entry.stock > 0,
-    })),
-    storeSlugs: getProductStoreSlugs(data),
-    sizes: data.sizes?.map(size => ({
-      ...size,
-      price: Number(size.price)
-    })) || []
-  };
+  return null;
 }
 
 export async function getSimilarProducts(
@@ -427,38 +317,17 @@ export async function getSimilarProducts(
   limit: number = 4
 ) {
   try {
-    // Handle category conversion like other functions
+    const catalog = await getFinaCatalog();
     const normalizedCategory =
       category === "bundle" ? "bundle" : category.toUpperCase();
 
-    const products = await prisma.product.findMany({
-      where: {
-        category: normalizedCategory as any,
-        id: {
-          not: productId,
-        },
-      },
-      include: {
-        sizes: {
-          select: {
-            id: true,
-            size: true,
-            price: true,
-          },
-        },
-      },
-      take: limit,
-      orderBy: { createdAt: "desc" },
-    });
-
-    return products.map((product) => ({
-      ...product,
-      price: product.price ? Number(product.price) : undefined,
-      sizes: product.sizes.map((size) => ({
-        ...size,
-        price: Number(size.price),
-      })),
-    }));
+    return catalog
+      .filter(
+        (product) =>
+          product.id !== String(productId) &&
+          product.category === normalizedCategory
+      )
+      .slice(0, limit);
   } catch (error) {
     console.error("Error fetching similar products:", error);
     return [];
@@ -474,13 +343,17 @@ export async function getProductCategoryCounts() {
     return cachedCounts;
   }
 
-  const counts = await prisma.product.groupBy({
-    by: ["category"],
-    _count: { category: true },
-  });
+  const catalog = await getFinaCatalog();
+  const countMap = new Map<string, number>();
+  for (const product of catalog) {
+    countMap.set(product.category, (countMap.get(product.category) || 0) + 1);
+  }
 
-  cachedCounts = counts;
+  cachedCounts = Array.from(countMap.entries()).map(([category, count]) => ({
+    category,
+    _count: { category: count },
+  }));
   lastFetched = now;
 
-  return counts;
+  return cachedCounts;
 }

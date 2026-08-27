@@ -106,7 +106,11 @@ const Page = (props: { params: { id: string; locale: string } }) => {
   };
 
   const isOthersProduct = () => {
-    return product?.category === "OTHERS";
+    return (
+      product?.category === "OTHERS" ||
+      !product?.sizes ||
+      product.sizes.length === 0
+    );
   };
 
   const getProductPrice = () => {

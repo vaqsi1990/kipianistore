@@ -133,14 +133,26 @@ export default function ListPage() {
           return 0;
       }
     })
-    .map((product) => ({
-      id: product.id,
-      image: product.images || [product.image],
-      price: product.price || product.minSizePrice || 0,
-      title: product.title || product.name,
-      category: product.category,
-      brand: product.brand,
-    }));
+    .map((product) => {
+      const originalPrice = product.price || product.minSizePrice || 0;
+      const salesPercentage = product.sales || 0;
+      const discountedPrice =
+        salesPercentage > 0
+          ? originalPrice * (1 - salesPercentage / 100)
+          : originalPrice;
+
+      return {
+        id: product.id,
+        image: product.images || [product.image] || ["/mattress.jpg"],
+        price: discountedPrice,
+        originalPrice: salesPercentage > 0 ? originalPrice : product.originalPrice,
+        sales: salesPercentage > 0 ? salesPercentage : undefined,
+        title: product.title || product.name,
+        titleEn: product.titleEn,
+        category: product.category,
+        brand: product.brand,
+      };
+    });
   // Clear all filters
   const clearFilters = () => {
     setSelectedType("");
