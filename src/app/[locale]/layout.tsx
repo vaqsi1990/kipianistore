@@ -53,7 +53,7 @@ export default async function RootLayout({
         <SessionProvider session={session}>
           <NextIntlClientProvider messages={messages}>
             <CartProvider>
-              <Navbar />
+              {/* <Navbar /> */}
               {children}
               <SideLogo />
               <Footer />
