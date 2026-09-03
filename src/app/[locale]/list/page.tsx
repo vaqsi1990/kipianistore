@@ -164,19 +164,18 @@ export default function ListPage() {
   };
 
   const transformedProducts = products.map((product) => {
-      const originalPrice = product.price || product.minSizePrice || 0;
-      const salesPercentage = product.sales || 0;
-      const discountedPrice =
-        salesPercentage > 0
-          ? originalPrice * (1 - salesPercentage / 100)
-          : originalPrice;
+      const currentPrice = product.price || product.minSizePrice || 0;
+      const strikethrough =
+        product.originalPrice && product.originalPrice > currentPrice
+          ? product.originalPrice
+          : undefined;
 
       return {
         id: product.id,
         image: product.images || [product.image] || ["/mattress.jpg"],
-        price: discountedPrice,
-        originalPrice: salesPercentage > 0 ? originalPrice : product.originalPrice,
-        sales: salesPercentage > 0 ? salesPercentage : undefined,
+        price: currentPrice,
+        originalPrice: strikethrough,
+        sales: strikethrough ? product.sales : undefined,
         title: product.title || product.name,
         titleEn: product.titleEn,
         category: product.category,

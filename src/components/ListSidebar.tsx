@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Search, Trash2, X } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
-import { getAllProducts } from "@/lib/actions/actions";
+import { getListFilterOptions } from "@/lib/actions/actions";
 import { Button } from "./ui/button";
 
 interface FilterState {
@@ -46,20 +46,13 @@ const ListSideBar: React.FC<FilterProps> = ({ isOpen, toggleSidebar, onFilterCha
   useEffect(() => {
     const fetch = async () => {
       try {
-        const { products } = await getAllProducts(1, 20, true);
-        setProducts(products);
-        const prices = products.flatMap((product: any) => {
-          if (product.sizes?.length) {
-            return product.sizes.map((s: any) => parseFloat(s.price));
-          }
-          return [parseFloat(product.price)];
-        }).filter((p: number) => !isNaN(p));
-        if (prices.length > 0) {
-          const min = Math.min(...prices);
-          const max = Math.max(...prices);
-          setPriceRange({ min, max });
-          setCurrentPriceRange({ min, max });
-        }
+        const options = await getListFilterOptions();
+        setProducts([
+          ...options.categories.map((category) => ({ category, brand: "" })),
+          ...options.brands.map((brand) => ({ category: "", brand })),
+        ]);
+        setPriceRange({ min: options.minPrice, max: options.maxPrice });
+        setCurrentPriceRange({ min: options.minPrice, max: options.maxPrice });
       } catch (err) {
         console.error(err);
       } finally {

@@ -1,14 +1,11 @@
 "use server";
 import { z } from "zod";
-import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "../prisma";
 import { updateProductSchema, finaProductOverrideSchema } from "../validators";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { requireAdmin } from "../auth-helpers";
 import { cookies } from "next/headers";
-import { syncProductStores } from "./store.actions";
-import { getProductStoreSlugs } from "../store-utils";
-import { filterFinaCatalog, getFinaCatalog, getFinaProductById, getFinaStoreList, hasFinaStock, sortFinaCatalog } from "../fina";
+import { filterFinaCatalog, getFinaCatalog, getFinaProductById, getFinaStoreList, hasFinaStock, invalidateFinaCatalogCache, sortFinaCatalog } from "../fina";
 import { updateFinaProductOverride } from "./fina-product.actions";
 
 export async function convertToPlainObject<T>(value: T): Promise<T> {
@@ -16,28 +13,18 @@ export async function convertToPlainObject<T>(value: T): Promise<T> {
 }
 
 export async function getSingleProduct(id: string) {
-  const product = await prisma.product.findFirst({
-    where: { id: id },
-    include: {
-      sizes: true,
-      stores: {
-        include: { store: true },
-      },
-    },
-  });
-
-  if (!product) return null;
-
-  return {
-    ...product,
-    price: product.price ? Number(product.price) : undefined,
-    storeIds: product.stores.map((entry) => entry.storeId),
-    storeSlugs: getProductStoreSlugs(product),
-    sizes: product.sizes?.map(size => ({
-      ...size,
-      price: Number(size.price)
-    })) || []
-  };
+    const product = await getFinaProductById(id);
+    if (product) {
+      return {
+        ...product,
+        storeIds: product.storeAvailability.map((entry) => entry.storeId),
+        storeSlugs: product.storeAvailability
+          .filter((entry) => entry.inStock)
+          .map((entry) => entry.slug),
+        sizes: product.sizes || [],
+      };
+    }
+    return null;
 }
 
 export async function formatError(error: any) {
@@ -70,21 +57,22 @@ export async function createProduct(data: z.infer<typeof finaProductOverrideSche
 export async function deleteProduct(id: string) {
   try {
     await requireAdmin();
-    const productExist = await prisma.product.findFirst({
-      where: { id },
+    const override = await prisma.finaProductOverride.findUnique({
+      where: { finaId: id },
     });
+    if (override) {
+      await prisma.finaProductOverride.delete({
+        where: { finaId: id },
+      });
+    }
 
-    if (!productExist) throw new Error("not found");
-
-    await prisma.product.delete({
-      where: { id },
-    });
-
-    revalidatePath("/admin/products");
+    const { invalidateFinaCatalogCache } = await import("../fina");
+    invalidateFinaCatalogCache();
+    revalidatePath("/adminall");
     revalidateTag("products");
     return {
       success: true,
-      message: "deleted",
+      message: override ? "Site override deleted" : "No site override to delete",
     };
   } catch (error) {
     return {
@@ -94,70 +82,19 @@ export async function deleteProduct(id: string) {
   }
 }
 
-export async function updateProduct(data: z.infer<typeof updateProductSchema>) {
+export async function updateProduct(data: z.infer<typeof updateProductSchema> | Record<string, any>) {
   try {
-    await requireAdmin();
-    const product = updateProductSchema.parse(data);
-
-    const productExists = await prisma.product.findFirst({
-      where: { id: product.id },
+    const id = String(data.id || data.finaId || "");
+    if (!id) return { success: false, message: "Id is required" };
+    return updateFinaProductOverride({
+      finaId: id,
+      images: Array.isArray(data.images) ? data.images : [],
+      title: data.title,
+      titleEn: data.titleEn,
+      description: data.description || "",
+      descriptionEn: data.descriptionEn || "",
+      brand: data.brand || "",
     });
-
-    if (!productExists) throw new Error("Product not found");
-
-    const normalizedCategory =
-      product.category === "bundle" ? "bundle" : product.category;
-
-    const updateData: any = {
-      title: product.title,
-      titleEn: product.titleEn,
-      description: product.description,
-      descriptionEn: product.descriptionEn,
-      brand: product.brand,
-      images: product.images,
-      category: normalizedCategory,
-      sales: product.sales,
-      popular: product.popular,
-    };
-
-    // Handle price for OTHERS category or sizes for other categories
-    if (product.category === "OTHERS") {
-      updateData.price = new Prisma.Decimal(product.price!);
-      // Remove all sizes for OTHERS category
-      updateData.sizes = {
-        deleteMany: {},
-      };
-    } else {
-      updateData.sizes = {
-        deleteMany: {},
-        create: product.sizes!.map((sizeData) => ({
-          size: sizeData.size,
-          price: new Prisma.Decimal(sizeData.price),
-        })),
-      };
-    }
-
-    await prisma.product.update({
-      where: { id: product.id },
-      data: updateData,
-    });
-
-    if (product.storeStock?.length) {
-      await syncProductStores(product.id, product.storeStock);
-    } else if (product.storeIds) {
-      await syncProductStores(
-        product.id,
-        product.storeIds.map((storeId) => ({ storeId, stock: 1 }))
-      );
-    }
-
-    revalidatePath("/admin/products");
-    revalidateTag("products");
-
-    return {
-      success: true,
-      message: "Product updated successfully",
-    };
   } catch (error) {
     console.error("Error in updateProduct:", error);
     return { success: false, message: formatError(error) };

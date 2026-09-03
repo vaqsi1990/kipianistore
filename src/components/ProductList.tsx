@@ -38,6 +38,7 @@ interface Product {
   sizes?: ProductSize[];
   size?: string;
   price?: number;
+  originalPrice?: number;
   sales?: number;
   minSizePrice?: number;
 }
@@ -173,20 +174,18 @@ function ProductList({
   const transformProducts = useCallback(
     (products: Product[]) => {
       return products.map((product) => {
-        const priceRange = getProductPriceRange(product);
-        const originalPrice = priceRange.min;
-        const salesPercentage = product.sales || 0;
-        const discountedPrice =
-          salesPercentage > 0
-            ? originalPrice * (1 - salesPercentage / 100)
-            : originalPrice;
+        const currentPrice = product.price || product.minSizePrice || 0;
+        const strikethrough =
+          product.originalPrice && product.originalPrice > currentPrice
+            ? product.originalPrice
+            : undefined;
 
         return {
           id: product.id,
           image: product.images,
-          price: discountedPrice,
-          originalPrice: salesPercentage > 0 ? originalPrice : undefined,
-          sales: salesPercentage > 0 ? salesPercentage : undefined,
+          price: currentPrice,
+          originalPrice: strikethrough,
+          sales: strikethrough ? product.sales : undefined,
           title: getLocalizedTitle(product),
           titleEn: product.titleEn,
         };

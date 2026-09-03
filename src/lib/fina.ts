@@ -51,6 +51,16 @@ const CATEGORY_ALIASES: Record<string, string> = {
 
 const BRAND_SKIP = new Set(["WATERPROOF", "DOUBLE"]);
 
+const BRAND_ALIASES: Record<string, string> = {
+  IDAS: "IDAS",
+  IDA: "IDAS",
+  ISBIR: "ISBIR",
+  ISBIRYATAK: "ISBIR",
+  SEVYAT: "SEVYAT",
+  SLEEPNICE: "SLEEPNICE",
+  SLEEPANDBED: "SLEEPNICE",
+};
+
 const FINA_STORES: Record<
   number,
   { slug: string; nameKa: string; nameEn: string; address: string; city: string }
@@ -157,6 +167,7 @@ export type FinaCatalogProduct = {
   batumi44: boolean;
   qutaisi: boolean;
   kobuleti: boolean;
+  zugdidi: boolean;
   storeAvailability: FinaStoreAvailability[];
   groupId: number;
   groupName: string;
@@ -185,6 +196,19 @@ function isActiveDiscount(price: FinaPrice) {
   return true;
 }
 
+function normalizeBrandKey(brand: string) {
+  return brand
+    .replace(/İ/g, "I")
+    .replace(/ı/g, "i")
+    .replace(/[^A-Za-z0-9]/g, "")
+    .toUpperCase();
+}
+
+function canonicalizeBrand(brand: string) {
+  const key = normalizeBrandKey(brand);
+  return BRAND_ALIASES[key] || brand;
+}
+
 function extractBrand(name: string) {
   const tokens = name
     .trim()
@@ -199,7 +223,7 @@ function extractBrand(name: string) {
     brand = "SEA SLEEP";
   }
   if (BRAND_SKIP.has(brand)) return "";
-  return brand;
+  return canonicalizeBrand(brand);
 }
 
 function categoryFromGroup(groupId: number, groupName = "") {
@@ -277,6 +301,31 @@ async function finaGet<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function finaPost<T>(path: string, body: unknown): Promise<T> {
+  const token = await authenticate();
+  const response = await fetch(`${getBaseUrl()}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`FINA ${path} failed (${response.status}) ${detail}`.trim());
+  }
+  return response.json() as Promise<T>;
+}
+
+export function getFinaStoreIdBySlug(slug: string) {
+  const match = Object.entries(FINA_STORES).find(
+    ([, store]) => store.slug === slug
+  );
+  return match ? Number(match[0]) : null;
+}
+
 function mapProducts(
   products: FinaRawProduct[],
   prices: FinaPrice[],
@@ -306,10 +355,11 @@ function mapProducts(
     if (originalPrice <= 0) continue;
 
     const discounted = retail && isActiveDiscount(retail);
-    const price = originalPrice;
+    const salePrice = discounted ? Number(retail.discount_price) : originalPrice;
+    const price = salePrice;
     const sales =
       discounted && originalPrice > 0
-        ? Math.round((1 - Number(retail.discount_price) / originalPrice) * 100)
+        ? Math.round((1 - salePrice / originalPrice) * 100)
         : undefined;
 
     const groupName = groupNames.get(product.group_id) || "";
@@ -340,6 +390,7 @@ function mapProducts(
       kobuleti: storeAvailability.some(
         (s) => s.slug === "kobuleti" && s.inStock
       ),
+      zugdidi: storeAvailability.some((s) => s.slug === "zugdidi" && s.inStock),
     };
 
     mapped.push({
@@ -439,11 +490,24 @@ export async function getFinaProductById(productId: string) {
 }
 
 export function getFinaDiscountedPrice(product: FinaCatalogProduct) {
-  const base = Number(product.price || 0);
-  if (product.sales && product.sales > 0) {
-    return parseFloat((base * (1 - product.sales / 100)).toFixed(2));
-  }
-  return parseFloat(base.toFixed(2));
+  return parseFloat(Number(product.price || 0).toFixed(2));
+}
+
+export function getFinaListPrice(product: {
+  price?: number;
+  originalPrice?: number;
+  sales?: number;
+}) {
+  const price = Number(product.price || 0);
+  const originalPrice = Number(product.originalPrice || 0);
+  const onSale = originalPrice > price && price > 0;
+  return {
+    price,
+    originalPrice: onSale ? originalPrice : undefined,
+    sales: onSale
+      ? product.sales || Math.round((1 - price / originalPrice) * 100)
+      : undefined,
+  };
 }
 
 export function getFinaStoreSlugs(product: FinaCatalogProduct) {
@@ -534,8 +598,9 @@ export function filterFinaCatalog(
     .filter((category) => category && category !== "ALL");
   const brands = (filters?.brands || [])
     .flatMap((brand) => String(brand).split(","))
-    .map((brand) => brand.trim().toLowerCase())
+    .map((brand) => canonicalizeBrand(brand.trim()))
     .filter(Boolean);
+  const brandKeys = new Set(brands.map(normalizeBrandKey));
   const query = filters?.query?.toLowerCase().trim() || "";
   const storeSlug =
     filters?.storeSlug && filters.storeSlug !== "all"
@@ -547,8 +612,8 @@ export function filterFinaCatalog(
       return false;
     }
     if (
-      brands.length &&
-      !brands.includes((product.brand || "").trim().toLowerCase())
+      brandKeys.size &&
+      !brandKeys.has(normalizeBrandKey(product.brand || ""))
     ) {
       return false;
     }
@@ -576,4 +641,76 @@ export function filterFinaCatalog(
     }
     return true;
   });
+}
+
+export async function saveFinaProductOut(params: {
+  orderId: string;
+  storeSlug: string;
+  purpose?: string;
+  comment?: string;
+  items: Array<{ productId: string; qty: number; price: number }>;
+}) {
+  const store = getFinaStoreIdBySlug(params.storeSlug);
+  if (!store) {
+    throw new Error(`Unknown FINA store: ${params.storeSlug}`);
+  }
+
+  const customer = Number(process.env.FINA_CUSTOMER_ID || 0);
+  const user = Number(process.env.FINA_USER_ID || 1);
+  const staff = Number(process.env.FINA_STAFF_ID || process.env.FINA_USER_ID || 1);
+  if (!customer) {
+    throw new Error("Missing FINA_CUSTOMER_ID");
+  }
+
+  const products = params.items.map((item) => ({
+    id: Number(item.productId),
+    sub_id: 0,
+    quantity: item.qty,
+    price: Number(item.price),
+  }));
+  const amount = Number(
+    products
+      .reduce((sum, item) => sum + item.quantity * item.price, 0)
+      .toFixed(2)
+  );
+  const now = new Date();
+  const date = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 19);
+
+  const result = await finaPost<{ id?: number; ex?: string | null }>(
+    "/api/operation/saveDocProductOut",
+    {
+      id: 0,
+      date,
+      num_pfx: "",
+      num: 0,
+      purpose: params.purpose || `Website order ${params.orderId}`,
+      amount,
+      currency: "GEL",
+      rate: 1,
+      store,
+      user,
+      staff,
+      project: Number(process.env.FINA_PROJECT_ID || 0),
+      customer,
+      is_vat: true,
+      make_entry: true,
+      pay_type: Number(process.env.FINA_PAY_TYPE || 1),
+      w_type: 0,
+      t_type: 1,
+      t_payer: 2,
+      w_cost: 0,
+      foreign: false,
+      comment: params.comment || params.orderId,
+      products,
+    }
+  );
+
+  if (result?.ex) {
+    throw new Error(String(result.ex));
+  }
+
+  invalidateFinaCatalogCache();
+  return result?.id || null;
 }

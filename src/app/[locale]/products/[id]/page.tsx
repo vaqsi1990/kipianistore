@@ -48,6 +48,7 @@ interface Product {
   kobuleti: boolean;
   sizes?: ProductSize[];
   price?: number;
+  originalPrice?: number;
   sales?: number;
   storeAvailability?: StoreAvailability[];
 }
@@ -120,15 +121,17 @@ const Page = (props: { params: { id: string; locale: string } }) => {
     if (selectedSizeData) {
       return selectedSizeData.price;
     }
-    return 0;
+    return product?.price || 0;
   };
 
   const getDiscountedPrice = () => {
-    const basePrice = getProductPrice();
-    if (product?.sales && product.sales > 0) {
-      return basePrice * (1 - product.sales / 100);
-    }
-    return basePrice;
+    return getProductPrice();
+  };
+
+  const getOriginalPrice = () => {
+    const current = getProductPrice();
+    const original = Number((product as { originalPrice?: number })?.originalPrice || 0);
+    return original > current ? original : current;
   };
 
   const formatSizeDisplay = (sizeEnum: string) => {
@@ -350,9 +353,10 @@ const Page = (props: { params: { id: string; locale: string } }) => {
                   <span className="text-[20px] font-bold text-[#bbb272]">
                     ₾{getDiscountedPrice().toFixed(2)}
                   </span>
-                  {product.sales && product.sales > 0 && (
+                  {((product as { originalPrice?: number }).originalPrice || 0) >
+                    getDiscountedPrice() && (
                     <span className="text-sm line-through text-white ml-2">
-                      ₾{getProductPrice().toFixed(2)}
+                      ₾{getOriginalPrice().toFixed(2)}
                     </span>
                   )}
                 </div>

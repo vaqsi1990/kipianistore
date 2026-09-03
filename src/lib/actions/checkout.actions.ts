@@ -51,7 +51,7 @@ export async function getFinaSummaryItems(
       category: product.category,
       image: product.images[0] || "/mattress.jpg",
       price: getFinaDiscountedPrice(product),
-      originalPrice: Number(product.price || 0),
+      originalPrice: Number(product.originalPrice || product.price || 0),
       sales: product.sales || 0,
       storeAvailability: product.storeAvailability.map((store) => ({
         slug: store.slug,

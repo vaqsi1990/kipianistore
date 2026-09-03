@@ -23,7 +23,6 @@ const CategoriesList = [
     quantity: 2,
     image: "/photo_2025-07-19_08-19-19.jpg",
   },
-
   {
     id: "5",
     type: "quilt",
@@ -31,6 +30,30 @@ const CategoriesList = [
     labelEn: "Quilt",
     quantity: 7,
     image: "/quilttt.jpg",
+  },
+  {
+    id: "7",
+    type: "pad",
+    label: "ტოპერი",
+    labelEn: "Topper",
+    quantity: 3,
+    image: "/mattress.jpg",
+  },
+  {
+    id: "8",
+    type: "linen",
+    label: "თეთრეული",
+    labelEn: "Bedding & linen",
+    quantity: 7,
+    image: "/bed1.jpg",
+  },
+  {
+    id: "9",
+    type: "protector",
+    label: "დამცავები",
+    labelEn: "Protectors",
+    quantity: 7,
+    image: "/mattress.jpg",
   },
   {
     id: "6",

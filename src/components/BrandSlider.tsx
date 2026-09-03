@@ -13,12 +13,11 @@ import five from "../../public/logos/5.png";
 import six from "../../public/logos/6.png";
 
 const logos = [
-  { src: one.src, name: "Sevyat", type: "sevyat" },
-  { src: two.src, name: "idaş", type: "idaş" },
-  { src: four.src, name: "İsbiryatak", type: "isbiryatak" },
-  { src: five.src, name: "SleepNice", type: "sleepnice" },
-
-  { src: six.src, name: "SleepAndBed", type: "sleepandbed" },
+  { src: one.src, name: "Sevyat", type: "SEVYAT" },
+  { src: two.src, name: "idaş", type: "IDAS" },
+  { src: four.src, name: "İsbiryatak", type: "ISBIR" },
+  { src: five.src, name: "SleepNice", type: "SLEEPNICE" },
+  { src: six.src, name: "SleepAndBed", type: "SLEEPNICE" },
 ];
 
 function BrandSlider() {

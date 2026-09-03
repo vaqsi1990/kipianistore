@@ -10,12 +10,14 @@ import { Input } from "@/components/ui/input";
 
 export type AdminProductRow = {
   id: string;
+  code?: string;
   title: string;
   titleEn: string;
   category: string;
   images: string[];
   brand: string;
   price?: number;
+  originalPrice?: number;
   sales?: number;
   popular: boolean;
   inStock: boolean;
@@ -24,6 +26,7 @@ export type AdminProductRow = {
   batumi44: boolean;
   qutaisi: boolean;
   kobuleti: boolean;
+  zugdidi: boolean;
 };
 
 const PAGE_SIZE = 10;
@@ -54,7 +57,14 @@ export default function AdminProductsTable({
       : products.filter((product) => {
           const title = product.title?.toLowerCase() || "";
           const titleEn = product.titleEn?.toLowerCase() || "";
-          return title.includes(q) || titleEn.includes(q);
+          const code = product.code?.toLowerCase() || "";
+          const brand = product.brand?.toLowerCase() || "";
+          return (
+            title.includes(q) ||
+            titleEn.includes(q) ||
+            code.includes(q) ||
+            brand.includes(q)
+          );
         });
 
     return [...matched].sort((a, b) => Number(b.inStock) - Number(a.inStock));
@@ -100,7 +110,7 @@ export default function AdminProductsTable({
           <Input
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="ძებნა სახელით..."
+            placeholder="ძებნა სახელით, კოდით ან ბრენდით..."
             className="pl-10 h-11 border-2 border-gray-200 rounded-lg"
           />
         </div>
@@ -123,6 +133,7 @@ export default function AdminProductsTable({
               <thead>
                 <tr className="border-b bg-white">
                   <th className="text-left p-4 font-semibold">პროდუქტი</th>
+                  <th className="text-left p-4 font-semibold">კოდი</th>
                   <th className="text-left p-4 font-semibold">კატეგორია</th>
                   <th className="text-left p-4 font-semibold">ბრენდი</th>
                   <th className="text-left p-4 font-semibold">ფასი</th>
@@ -152,6 +163,9 @@ export default function AdminProductsTable({
                       </div>
                     </td>
                     <td className="p-4">
+                      <p className="font-mono text-sm">{product.code || "—"}</p>
+                    </td>
+                    <td className="p-4">
                       <Badge variant="outline">{product.category}</Badge>
                     </td>
                     <td className="p-4">
@@ -160,6 +174,12 @@ export default function AdminProductsTable({
                     <td className="p-4">
                       <p className="text-sm text-gray-600">
                         ₾{Number(product.price || 0).toFixed(2)}
+                        {product.originalPrice &&
+                        product.originalPrice > Number(product.price || 0) ? (
+                          <span className="ml-2 line-through text-gray-400">
+                            ₾{Number(product.originalPrice).toFixed(2)}
+                          </span>
+                        ) : null}
                       </p>
                     </td>
                     <td className="p-4">
@@ -183,6 +203,11 @@ export default function AdminProductsTable({
                               ბათუმი
                             </Badge>
                           )}
+                          {product.batumi44 && (
+                            <Badge variant="secondary" className="text-xs">
+                              ბათუმი 44
+                            </Badge>
+                          )}
                           {product.qutaisi && (
                             <Badge variant="secondary" className="text-xs">
                               ქუთაისი
@@ -191,6 +216,11 @@ export default function AdminProductsTable({
                           {product.kobuleti && (
                             <Badge variant="secondary" className="text-xs">
                               ქობულეთი
+                            </Badge>
+                          )}
+                          {product.zugdidi && (
+                            <Badge variant="secondary" className="text-xs">
+                              ზუგდიდი
                             </Badge>
                           )}
                         </div>

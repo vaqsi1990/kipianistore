@@ -258,12 +258,14 @@ export default async function AdminAllPage() {
                 <AdminProductsTable
                   products={products.map((product) => ({
                     id: product.id,
+                    code: product.code,
                     title: product.title,
                     titleEn: product.titleEn,
                     category: product.category,
                     images: product.images,
                     brand: product.brand,
                     price: product.price,
+                    originalPrice: product.originalPrice,
                     sales: product.sales,
                     popular: product.popular,
                     inStock: product.storeAvailability.some((store) => store.inStock),
@@ -272,6 +274,7 @@ export default async function AdminAllPage() {
                     batumi44: product.batumi44,
                     qutaisi: product.qutaisi,
                     kobuleti: product.kobuleti,
+                    zugdidi: product.zugdidi,
                   }))}
                 />
               </CardContent>

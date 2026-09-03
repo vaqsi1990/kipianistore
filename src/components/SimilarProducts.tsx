@@ -36,6 +36,7 @@ interface Product {
   sizes?: ProductSize[];
   size?: string;
   price?: number;
+  originalPrice?: number;
   sales?: number;
 }
 
@@ -157,22 +158,20 @@ const SimilarProducts: React.FC<SimilarProductsProps> = ({
         <div className="w-full   px-4">
           <ProductHelper
             items={similarProducts.slice(0, 4).map((product) => {
-              const originalPrice = product.price
+              const currentPrice = product.price
                 ? product.price
                 : product.sizes?.[0]?.price || 0;
-              const salesPercentage = product.sales || 0;
-              const discountedPrice =
-                salesPercentage > 0
-                  ? originalPrice * (1 - salesPercentage / 100)
-                  : originalPrice;
+              const originalPrice =
+                product.originalPrice && product.originalPrice > currentPrice
+                  ? product.originalPrice
+                  : undefined;
 
               return {
                 id: product.id,
                 image: product.images,
-                price: discountedPrice,
-                originalPrice:
-                  salesPercentage > 0 ? originalPrice : undefined,
-                sales: salesPercentage > 0 ? salesPercentage : undefined,
+                price: currentPrice,
+                originalPrice,
+                sales: originalPrice ? product.sales : undefined,
                 title: product.title,
                 titleEn: product.titleEn,
               };

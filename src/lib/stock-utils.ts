@@ -2,6 +2,8 @@ import { prisma } from "./prisma";
 import {
   getFinaProductById,
   getFinaStockAtStore,
+  invalidateFinaCatalogCache,
+  saveFinaProductOut,
 } from "./fina";
 
 export async function getProductStockAtStore(
@@ -28,9 +30,58 @@ export async function validateCartStockAtStore(
 }
 
 export async function decrementOrderStock(
-  _orderId: string,
-  _deliverySlug: string
+  orderId: string,
+  deliverySlug: string
 ): Promise<void> {
-  // FINA is the inventory source of truth. Stock is validated at checkout
-  // but not written back from the storefront.
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { orderitems: true },
+  });
+  if (!order?.orderitems.length) return;
+
+  try {
+    const finaDocId = await saveFinaProductOut({
+      orderId: order.id,
+      storeSlug: deliverySlug,
+      purpose: `Website order ${order.id}`,
+      comment: order.id,
+      items: order.orderitems.map((item) => ({
+        productId: item.productId,
+        qty: item.qty,
+        price: Number(item.price),
+      })),
+    });
+
+    const current =
+      order.paymentResult && typeof order.paymentResult === "object"
+        ? (order.paymentResult as Record<string, unknown>)
+        : {};
+
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        paymentResult: {
+          ...current,
+          finaDocId,
+          finaPostedAt: new Date().toISOString(),
+        },
+      },
+    });
+    invalidateFinaCatalogCache();
+  } catch (error) {
+    console.error("FINA product-out failed:", error);
+    const current =
+      order.paymentResult && typeof order.paymentResult === "object"
+        ? (order.paymentResult as Record<string, unknown>)
+        : {};
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        paymentResult: {
+          ...current,
+          finaError: error instanceof Error ? error.message : String(error),
+        },
+      },
+    });
+  }
 }

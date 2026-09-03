@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { X, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
-import { getAllProducts } from "@/lib/actions/actions";
+import { getListFilterOptions } from "@/lib/actions/actions";
 import { useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 
@@ -34,7 +34,8 @@ const SideBar: React.FC<SideBarProps> = ({
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [products, setProducts] = useState<any[]>([]);
+  const [catalogCategories, setCatalogCategories] = useState<string[]>([]);
+  const [catalogBrands, setCatalogBrands] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,34 +100,9 @@ const SideBar: React.FC<SideBarProps> = ({
   }, [urlCategory, urlBrand, urlQuery]);
 
   // Memoize categories and brands to prevent unnecessary re-renders
-  const categories = useMemo(() => {
-    let cats = Array.from(new Set(products.map((p) => p.category))).filter(
-      Boolean
-    );
+  const categories = useMemo(() => catalogCategories, [catalogCategories]);
 
-    // Only filter by URL category if we're not clearing filters
-    if (urlCategory && selectedCategories.length > 0) {
-      cats = cats.filter(
-        (cat) => cat.toLowerCase() === urlCategory.toLowerCase()
-      );
-    }
-
- 
-    return cats;
-  }, [products, urlCategory, selectedCategories]);
-
-  const brands = useMemo(() => {
-    let brs = Array.from(new Set(products.map((p) => p.brand))).filter(Boolean);
-
-    // Only filter by URL brand if we're not clearing filters
-    if (urlBrand && selectedBrands.length > 0) {
-      brs = brs.filter(
-        (brand) => brand.toLowerCase() === urlBrand.toLowerCase()
-      );
-    }
-
-    return brs;
-  }, [products, urlBrand, selectedBrands]);
+  const brands = useMemo(() => catalogBrands, [catalogBrands]);
 
   // Memoize localized category labels
   const getLocalizedCategoryLabel = useCallback(
@@ -170,24 +146,11 @@ const SideBar: React.FC<SideBarProps> = ({
   useEffect(() => {
     const fetch = async () => {
       try {
-        const { products } = await getAllProducts(1, 20, true);
-        setProducts(products);
-
-        const prices = products
-          .flatMap((product: any) => {
-            if (product.sizes?.length) {
-              return product.sizes.map((s: any) => parseFloat(s.price));
-            }
-            return [parseFloat(product.price)];
-          })
-          .filter((p: number) => !isNaN(p));
-
-        if (prices.length > 0) {
-          const min = Math.min(...prices);
-          const max = Math.max(...prices);
-          setPriceRange({ min, max });
-          setCurrentPriceRange({ min, max });
-        }
+        const options = await getListFilterOptions();
+        setCatalogCategories(options.categories);
+        setCatalogBrands(options.brands);
+        setPriceRange({ min: options.minPrice, max: options.maxPrice });
+        setCurrentPriceRange({ min: options.minPrice, max: options.maxPrice });
       } catch (err) {
         console.error(err);
       } finally {
