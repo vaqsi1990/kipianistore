@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { auth } from "../../../auth";
 import { prisma } from "../prisma";
-import { convertToPlainObject } from "../utils";
 import { CartItem } from "../types";
 import { Prisma } from "@/generated/prisma/client";
 import { getCartForUser } from "../cart-helpers";
@@ -15,23 +14,39 @@ import {
   refreshCartItemsFromFina,
 } from "../fina-cart";
 
+type SerializedCart = {
+  id: string;
+  items: CartItem[];
+  itemsPrice: string;
+  totalPrice: string;
+  shippingPrice: string;
+  taxPrice: string;
+  sessionCartId?: string;
+  userId?: string | null;
+};
+
 function serializeCart(cart: {
+  id: string;
+  sessionCartId?: string;
+  userId?: string | null;
   itemsPrice: Prisma.Decimal;
   totalPrice: Prisma.Decimal;
   shippingPrice: Prisma.Decimal;
   taxPrice: Prisma.Decimal;
-}, items: CartItem[]) {
-  return convertToPlainObject({
-    ...cart,
+}, items: CartItem[]): SerializedCart {
+  return {
+    id: cart.id,
+    sessionCartId: cart.sessionCartId,
+    userId: cart.userId,
     items,
     itemsPrice: cart.itemsPrice.toString(),
     totalPrice: cart.totalPrice.toString(),
     shippingPrice: cart.shippingPrice.toString(),
     taxPrice: cart.taxPrice.toString(),
-  });
+  };
 }
 
-export async function getMyCart() {
+export async function getMyCart(): Promise<SerializedCart | undefined> {
     const sessionCartId = (await cookies()).get('sessionCartId')?.value;
     const session = await auth();
     const userId = session?.user?.id ? (session.user.id as string) : undefined;
