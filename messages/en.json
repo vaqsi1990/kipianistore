@@ -551,7 +551,9 @@
     "brand": "Brand",
     "priceRange": "Price Range",
     "allBrands": "All Brands",
-    "allCategories": "All Categories"
+    "allCategories": "All Categories",
+    "location": "Location",
+    "allLocations": "All cities"
   },
   "profile": {
     "title": "Profile Dashboard",

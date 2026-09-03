@@ -10,6 +10,8 @@ const GROUP_TO_CATEGORY: Record<number, string> = {
   136: "QUILT",
   140: "PAD",
   138: "BED",
+  141: "LINEN",
+  142: "PROTECTOR",
 };
 
 const CATEGORY_IMAGE: Record<string, string> = {
@@ -18,8 +20,36 @@ const CATEGORY_IMAGE: Record<string, string> = {
   QUILT: "/quilttt.jpg",
   PAD: "/mattress.jpg",
   BED: "/bed1.jpg",
+  LINEN: "/bed1.jpg",
+  PROTECTOR: "/mattress.jpg",
   OTHERS: "/chair.jpg",
 };
+
+export const FINA_CATEGORY_LABELS: Record<string, { en: string; ka: string }> = {
+  MATTRESS: { en: "Mattress", ka: "მატრასი" },
+  PILLOW: { en: "Pillow", ka: "ბალიში" },
+  QUILT: { en: "Quilt", ka: "საბანი" },
+  PAD: { en: "Topper", ka: "ტოპერი" },
+  BED: { en: "Bed", ka: "საწოლი" },
+  LINEN: { en: "Bedding & linen", ka: "თეთრეული" },
+  PROTECTOR: { en: "Protectors", ka: "დამცავები" },
+  OTHERS: { en: "Others", ka: "სხვა" },
+};
+
+const CATEGORY_ALIASES: Record<string, string> = {
+  MATTRESS: "MATTRESS",
+  PILLOW: "PILLOW",
+  QUILT: "QUILT",
+  PAD: "PAD",
+  TOPPER: "PAD",
+  BED: "BED",
+  LINEN: "LINEN",
+  PROTECTOR: "PROTECTOR",
+  OTHERS: "OTHERS",
+  OTHER: "OTHERS",
+};
+
+const BRAND_SKIP = new Set(["WATERPROOF", "DOUBLE"]);
 
 const FINA_STORES: Record<
   number,
@@ -129,6 +159,7 @@ export type FinaCatalogProduct = {
   kobuleti: boolean;
   storeAvailability: FinaStoreAvailability[];
   groupId: number;
+  groupName: string;
   code: string;
 };
 
@@ -155,8 +186,39 @@ function isActiveDiscount(price: FinaPrice) {
 }
 
 function extractBrand(name: string) {
-  const token = name.trim().split(/\s+/)[0] || "";
-  return token.replace(/[^A-Za-zა-ჰ0-9-]/g, "") || "KIPIANI";
+  const tokens = name
+    .trim()
+    .split(/\s+/)
+    .map((token) => token.replace(/[^A-Za-z0-9-]/g, "").toUpperCase())
+    .filter((token) => /^[A-Z]/.test(token));
+
+  if (!tokens.length) return "";
+
+  let brand = tokens[0];
+  if (brand === "SEA" && tokens[1] === "SLEEP") {
+    brand = "SEA SLEEP";
+  }
+  if (BRAND_SKIP.has(brand)) return "";
+  return brand;
+}
+
+function categoryFromGroup(groupId: number, groupName = "") {
+  if (GROUP_TO_CATEGORY[groupId]) return GROUP_TO_CATEGORY[groupId];
+
+  const name = groupName.toLowerCase();
+  if (name.includes("მატრას")) return "MATTRESS";
+  if (name.includes("ბალიშ")) return "PILLOW";
+  if (name.includes("საბნ")) return "QUILT";
+  if (name.includes("ტოპერ")) return "PAD";
+  if (name.includes("დამცავ")) return "PROTECTOR";
+  if (name.includes("თეთრეულ") || name.includes("გადასაფარ")) return "LINEN";
+  if (name.includes("საწოლ")) return "BED";
+  return "OTHERS";
+}
+
+function normalizeFilterCategory(value: string) {
+  const key = value.trim().toUpperCase();
+  return CATEGORY_ALIASES[key] || key;
 }
 
 function isDeletedProduct(product: FinaRawProduct) {
@@ -218,7 +280,8 @@ async function finaGet<T>(path: string): Promise<T> {
 function mapProducts(
   products: FinaRawProduct[],
   prices: FinaPrice[],
-  rest: FinaRest[]
+  rest: FinaRest[],
+  groupNames: Map<number, string>
 ): FinaCatalogProduct[] {
   const priceByProduct = new Map<number, FinaPrice>();
   for (const price of prices) {
@@ -249,7 +312,8 @@ function mapProducts(
         ? Math.round((1 - Number(retail.discount_price) / originalPrice) * 100)
         : undefined;
 
-    const category = GROUP_TO_CATEGORY[product.group_id] || "OTHERS";
+    const groupName = groupNames.get(product.group_id) || "";
+    const category = categoryFromGroup(product.group_id, groupName);
     const storeRows = restByProduct.get(product.id) || [];
     const storeAvailability: FinaStoreAvailability[] = storeRows.map((row) => {
       const store = FINA_STORES[row.store];
@@ -297,6 +361,7 @@ function mapProducts(
       ...flags,
       storeAvailability,
       groupId: product.group_id,
+      groupName,
       code: product.code,
     });
   }
@@ -341,17 +406,25 @@ async function applyFinaOverrides(products: FinaCatalogProduct[]) {
 }
 
 async function loadCatalog(): Promise<FinaCatalogProduct[]> {
-  const [productsRes, pricesRes, restRes] = await Promise.all([
+  const [productsRes, pricesRes, restRes, groupsRes] = await Promise.all([
     finaGet<{ products?: FinaRawProduct[] }>("/api/operation/getProducts"),
     finaGet<{ prices?: FinaPrice[] }>("/api/operation/getProductPrices"),
     finaGet<{ rest?: FinaRest[] }>("/api/operation/getProductsRest"),
+    finaGet<{ groups?: { id: number; name: string }[] }>(
+      "/api/operation/getProductGroups"
+    ),
   ]);
+
+  const groupNames = new Map(
+    (groupsRes.groups || []).map((group) => [group.id, group.name])
+  );
 
   return applyFinaOverrides(
     mapProducts(
       productsRes.products || [],
       pricesRes.prices || [],
-      restRes.rest || []
+      restRes.rest || [],
+      groupNames
     )
   );
 }
@@ -422,6 +495,25 @@ export async function getFinaCatalog(): Promise<FinaCatalogProduct[]> {
   return catalogPromise;
 }
 
+export function sortFinaCatalog(
+  products: FinaCatalogProduct[],
+  sortBy?: string
+) {
+  const sorted = [...products];
+  switch (sortBy) {
+    case "price-low":
+      return sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
+    case "price-high":
+      return sorted.sort((a, b) => (b.price || 0) - (a.price || 0));
+    case "name":
+      return sorted.sort((a, b) =>
+        (a.title || "").localeCompare(b.title || "", "ka")
+      );
+    default:
+      return sorted;
+  }
+}
+
 export function filterFinaCatalog(
   products: FinaCatalogProduct[],
   filters?: {
@@ -436,9 +528,14 @@ export function filterFinaCatalog(
     storeSlug?: string;
   }
 ) {
-  const category = filters?.category
-    ? String(filters.category).toUpperCase()
-    : "";
+  const categories = String(filters?.category || "")
+    .split(",")
+    .map(normalizeFilterCategory)
+    .filter((category) => category && category !== "ALL");
+  const brands = (filters?.brands || [])
+    .flatMap((brand) => String(brand).split(","))
+    .map((brand) => brand.trim().toLowerCase())
+    .filter(Boolean);
   const query = filters?.query?.toLowerCase().trim() || "";
   const storeSlug =
     filters?.storeSlug && filters.storeSlug !== "all"
@@ -446,10 +543,13 @@ export function filterFinaCatalog(
       : "";
 
   return products.filter((product) => {
-    if (category && category !== "ALL" && product.category !== category) {
+    if (categories.length && !categories.includes(product.category)) {
       return false;
     }
-    if (filters?.brands?.length && !filters.brands.includes(product.brand)) {
+    if (
+      brands.length &&
+      !brands.includes((product.brand || "").trim().toLowerCase())
+    ) {
       return false;
     }
     const price = product.price || 0;
@@ -460,7 +560,8 @@ export function filterFinaCatalog(
       return false;
     }
     if (query) {
-      const haystack = `${product.title} ${product.titleEn} ${product.brand} ${product.code}`.toLowerCase();
+      const haystack =
+        `${product.title} ${product.titleEn} ${product.brand} ${product.code} ${product.groupName} ${product.category}`.toLowerCase();
       if (!haystack.includes(query)) return false;
     }
     if (filters?.popular === true && !product.popular) return false;

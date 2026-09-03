@@ -8,7 +8,7 @@ import { requireAdmin } from "../auth-helpers";
 import { cookies } from "next/headers";
 import { syncProductStores } from "./store.actions";
 import { getProductStoreSlugs } from "../store-utils";
-import { filterFinaCatalog, getFinaCatalog, getFinaProductById, hasFinaStock } from "../fina";
+import { filterFinaCatalog, getFinaCatalog, getFinaProductById, getFinaStoreList, hasFinaStock, sortFinaCatalog } from "../fina";
 import { updateFinaProductOverride } from "./fina-product.actions";
 
 export async function convertToPlainObject<T>(value: T): Promise<T> {
@@ -169,6 +169,54 @@ export async function getProductCategories() {
   return Array.from(new Set(catalog.map((product) => product.category))).sort();
 }
 
+const FILTER_CATEGORY_ORDER = [
+  "MATTRESS",
+  "PILLOW",
+  "QUILT",
+  "PAD",
+  "BED",
+  "LINEN",
+  "PROTECTOR",
+  "OTHERS",
+];
+
+export async function getListFilterOptions() {
+  try {
+    const catalog = await getFinaCatalog();
+    const inStock = catalog.filter((product) => hasFinaStock(product));
+    const categorySet = new Set(
+      inStock.map((product) => product.category).filter(Boolean)
+    );
+    const categories = [
+      ...FILTER_CATEGORY_ORDER.filter((category) => categorySet.has(category)),
+      ...Array.from(categorySet)
+        .filter((category) => !FILTER_CATEGORY_ORDER.includes(category))
+        .sort(),
+    ];
+    const brands = Array.from(
+      new Set(inStock.map((product) => product.brand).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b));
+    const prices = inStock
+      .map((product) => Number(product.price || 0))
+      .filter((price) => price > 0);
+    return {
+      categories,
+      brands,
+      stores: getFinaStoreList().map((store) => ({
+        slug: store.slug,
+        nameKa: store.nameKa,
+        nameEn: store.nameEn,
+        address: store.address,
+      })),
+      minPrice: prices.length ? Math.min(...prices) : 0,
+      maxPrice: prices.length ? Math.max(...prices) : 0,
+    };
+  } catch (error) {
+    console.error("Error loading FINA filter options:", error);
+    return { categories: [], brands: [], stores: [], minPrice: 0, maxPrice: 0 };
+  }
+}
+
 async function fetchProductsFromDb(
   page: number,
   pageSize: number,
@@ -177,17 +225,20 @@ async function fetchProductsFromDb(
   selectedStore: string
 ) {
   const catalog = await getFinaCatalog();
-  const filtered = filterFinaCatalog(catalog, {
-    category: filters?.category as string | undefined,
-    brands: filters?.brands as string[] | undefined,
-    minPrice: filters?.minPrice as number | undefined,
-    maxPrice: filters?.maxPrice as number | undefined,
-    query: filters?.query as string | undefined,
-    inStock: true,
-    popular: filters?.popular as boolean | undefined,
-    onSale: filters?.onSale as boolean | undefined,
-    storeSlug: selectedStore,
-  });
+  const filtered = sortFinaCatalog(
+    filterFinaCatalog(catalog, {
+      category: filters?.category as string | undefined,
+      brands: filters?.brands as string[] | undefined,
+      minPrice: filters?.minPrice as number | undefined,
+      maxPrice: filters?.maxPrice as number | undefined,
+      query: filters?.query as string | undefined,
+      inStock: true,
+      popular: filters?.popular as boolean | undefined,
+      onSale: filters?.onSale as boolean | undefined,
+      storeSlug: selectedStore,
+    }),
+    filters?.sortBy as string | undefined
+  );
 
   const total = filtered.length;
   const pageItems = getAll

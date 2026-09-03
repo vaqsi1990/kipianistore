@@ -95,6 +95,8 @@ export default function Categories() {
           QUILT: "quilt",
           PAD: "quilt",
           BED: "bed",
+          LINEN: "OTHERS",
+          PROTECTOR: "OTHERS",
           OTHERS: "OTHERS",
         };
         const mappedCounts: Record<string, number> = {};

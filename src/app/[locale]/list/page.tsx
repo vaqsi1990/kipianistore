@@ -3,40 +3,108 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { getAllProducts } from "@/lib/actions/actions";
+import { getAllProducts, getListFilterOptions } from "@/lib/actions/actions";
 import ProductHelper from "@/components/ProductHelper";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { X, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Pagination from "@/components/Pagination";
 import { motion } from "framer-motion";
+import { useRouter } from "@/i18n/navigation";
+import { getStoreLabel } from "@/lib/store-utils";
+
+const STORE_COOKIE = "selectedStore";
+
+function readStoreCookie(): string {
+  if (typeof document === "undefined") return "all";
+  const match = document.cookie.match(new RegExp(`(?:^|; )${STORE_COOKIE}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : "all";
+}
+
+function writeStoreCookie(slug: string) {
+  document.cookie = `${STORE_COOKIE}=${encodeURIComponent(slug)}; path=/; max-age=31536000; SameSite=Lax`;
+  window.dispatchEvent(new Event("store-changed"));
+}
+
+const CATEGORY_LABELS: Record<string, { en: string; ka: string }> = {
+  MATTRESS: { en: "Mattress", ka: "მატრასი" },
+  PILLOW: { en: "Pillow", ka: "ბალიში" },
+  QUILT: { en: "Quilt", ka: "საბანი" },
+  PAD: { en: "Topper", ka: "ტოპერი" },
+  BED: { en: "Bed", ka: "საწოლი" },
+  LINEN: { en: "Bedding & linen", ka: "თეთრეული" },
+  PROTECTOR: { en: "Protectors", ka: "დამცავები" },
+  OTHERS: { en: "Others", ka: "სხვა" },
+};
 
 export default function ListPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const locale = useLocale();
   const [products, setProducts] = useState<any[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedType, setSelectedType] = useState<string>("");
-  const [selectedBrand, setSelectedBrand] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [filterOptions, setFilterOptions] = useState<{
+    categories: string[];
+    brands: string[];
+    stores: { slug: string; nameKa: string; nameEn: string; address: string }[];
+    minPrice: number;
+    maxPrice: number;
+  }>({ categories: [], brands: [], stores: [], minPrice: 0, maxPrice: 0 });
+  const selectedType = (searchParams.get("cat") || "").split(",")[0].trim().toUpperCase();
+  const selectedBrandRaw = (searchParams.get("brand") || "").split(",")[0].trim();
   const [itemsPerPage] = useState(20);
-  const [selectedPrice, setSelectedPrice] = useState<{
+  const [priceDraft, setPriceDraft] = useState<{
     min: number | null;
     max: number | null;
   }>({ min: null, max: null });
-  const [sortBy, setSortBy] = useState<string>("newest");
+  const sortBy = searchParams.get("sort") || "newest";
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [cookieStore, setCookieStore] = useState("all");
   const t = useTranslations("common");
+  const selectedBrand =
+    filterOptions.brands.find(
+      (brand) => brand.toLowerCase() === selectedBrandRaw.toLowerCase()
+    ) || selectedBrandRaw;
+  const selectedStore = searchParams.get("store") || cookieStore;
 
-  // Initialize current page from URL and reset pagination when filters or sorting change
+  const updateFilters = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value == null || value === "") {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
+    params.set("page", "1");
+    const query = params.toString();
+    router.push(query ? `/list?${query}` : "/list");
+  };
+
   useEffect(() => {
-    const pageFromUrl = searchParams.get("page");
-    if (pageFromUrl) {
-      setCurrentPage(Number(pageFromUrl));
-    } else {
-      setCurrentPage(1);
-    }
-  }, [searchParams, sortBy]);
+    const loadOptions = async () => {
+      try {
+        const options = await getListFilterOptions();
+        setFilterOptions(options);
+      } catch (error) {
+        console.error("Error loading FINA filter options:", error);
+      }
+    };
+    loadOptions();
+    setCookieStore(readStoreCookie());
+  }, []);
+
+  useEffect(() => {
+    setPriceDraft({
+      min: searchParams.get("minPrice")
+        ? Number(searchParams.get("minPrice"))
+        : null,
+      max: searchParams.get("maxPrice")
+        ? Number(searchParams.get("maxPrice"))
+        : null,
+    });
+  }, [searchParams]);
 
   // წამოღება products
   useEffect(() => {
@@ -44,7 +112,6 @@ export default function ListPage() {
       setIsLoading(true);
       try {
         const pageFromUrl = Number(searchParams.get("page")) || 1;
-        setCurrentPage(pageFromUrl);
 
         const filters = {
           category: searchParams.get("cat") || undefined,
@@ -64,6 +131,8 @@ export default function ListPage() {
                 ? false
                 : undefined,
           query: searchParams.get("query") || undefined,
+          sortBy: searchParams.get("sort") || "newest",
+          storeSlug: searchParams.get("store") || undefined,
         };
 
         const res = await getAllProducts(pageFromUrl, itemsPerPage, false, filters);
@@ -85,55 +154,16 @@ export default function ListPage() {
     const brand = searchParams.get("brand");
 
     if (query) return `Search: ${query}`;
-    if (category) return category;
+    if (category) {
+      const key = category.split(",")[0].trim().toUpperCase();
+      const labels = CATEGORY_LABELS[key];
+      return labels ? (locale === "en" ? labels.en : labels.ka) : category;
+    }
     if (brand) return brand;
     return t("products");
   };
-  const filteredProducts = products.filter((product) => {
-    // Category filter
-    if (selectedType && product.category !== selectedType) {
-      return false;
-    }
 
-    // Brand filter
-    if (selectedBrand && product.brand !== selectedBrand) {
-      return false;
-    }
-
-    // Price filter
-    const productPrice = product.price || product.minSizePrice || 0;
-    if (selectedPrice.min !== null && productPrice < selectedPrice.min) {
-      return false;
-    }
-    if (selectedPrice.max !== null && productPrice > selectedPrice.max) {
-      return false;
-    }
-
-    return true;
-  });
-  // sorting
-  const transformedProducts = filteredProducts
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "price-low":
-          return (
-            (a.price || a.minSizePrice || 0) -
-            (b.price || b.minSizePrice || 0)
-          );
-        case "price-high":
-          return (
-            (b.price || b.minSizePrice || 0) -
-            (a.price || a.minSizePrice || 0)
-          );
-        case "name":
-          return (a.title || a.name || "").localeCompare(
-            b.title || b.name || ""
-          );
-        default:
-          return 0;
-      }
-    })
-    .map((product) => {
+  const transformedProducts = products.map((product) => {
       const originalPrice = product.price || product.minSizePrice || 0;
       const salesPercentage = product.sales || 0;
       const discountedPrice =
@@ -153,59 +183,90 @@ export default function ListPage() {
         brand: product.brand,
       };
     });
-  // Clear all filters
   const clearFilters = () => {
-    setSelectedType("");
-    setSelectedBrand("");
-    setSelectedPrice({ min: null, max: null });
-    setSortBy("newest");
-    setCurrentPage(1);
-    // Close mobile filter after clearing
+    setIsMobileFilterOpen(false);
+    writeStoreCookie("all");
+    setCookieStore("all");
+    router.push("/list");
+  };
+
+  const applyPriceFilter = () => {
+    updateFilters({
+      minPrice: priceDraft.min != null ? String(priceDraft.min) : null,
+      maxPrice: priceDraft.max != null ? String(priceDraft.max) : null,
+    });
     setIsMobileFilterOpen(false);
   };
-  // pagination
+
+  const handleLocationChange = (slug: string) => {
+    const next = slug || "all";
+    writeStoreCookie(next);
+    setCookieStore(next);
+    updateFilters({ store: next === "all" ? null : next });
+  };
+
+  const categoryLabel = (category: string) => {
+    const labels = CATEGORY_LABELS[category];
+    if (!labels) return category;
+    return locale === "en" ? labels.en : labels.ka;
+  };
+
+  const hasActiveFilters = Boolean(
+    searchParams.get("cat") ||
+      searchParams.get("brand") ||
+      searchParams.get("query") ||
+      searchParams.get("minPrice") ||
+      searchParams.get("maxPrice") ||
+      (selectedStore && selectedStore !== "all")
+  );
+
   const totalPages = Math.ceil(totalProducts / itemsPerPage);
   const currentProducts = transformedProducts;
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    // Update URL with page parameter
-    const url = new URL(window.location.href);
-    url.searchParams.set('page', page.toString());
-    window.history.pushState({}, '', url.toString());
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  // Filter component to avoid duplication
   const FilterContent = () => (
     <div className="space-y-4">
-      {/* Category Filter */}
       <div>
         <label className="block text-[16px] md:text-[18px] font-medium text-black mb-2">{t("category")}</label>
         <select
           value={selectedType}
-          onChange={(e) => setSelectedType(e.target.value)}
+          onChange={(e) => updateFilters({ cat: e.target.value || null })}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#438c71]/50 focus:border-[#438c71]"
         >
           <option value="">{t("allCategories")}</option>
-          {Array.from(new Set(products.map(p => p.category).filter(Boolean))).map((category) => (
+          {filterOptions.categories.map((category) => (
             <option key={category} value={category}>
-              {category}
+              {categoryLabel(category)}
             </option>
           ))}
         </select>
       </div>
 
-      {/* Brand Filter */}
+      <div>
+        <label className="block text-[16px] md:text-[18px] font-medium text-black mb-2">{t("location")}</label>
+        <select
+          value={selectedStore}
+          onChange={(e) => handleLocationChange(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#438c71]/50 focus:border-[#438c71]"
+        >
+          <option value="all">{t("allLocations")}</option>
+          {filterOptions.stores.map((store) => (
+            <option key={store.slug} value={store.slug}>
+              {getStoreLabel(store, locale)}
+              {store.address ? ` — ${store.address}` : ""}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div>
         <label className="block text-[16px] md:text-[18px] font-medium text-black mb-2">{t("brand")}</label>
         <select
           value={selectedBrand}
-          onChange={(e) => setSelectedBrand(e.target.value)}
+          onChange={(e) => updateFilters({ brand: e.target.value || null })}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#438c71]/50 focus:border-[#438c71]"
         >
           <option value="">{t("allBrands")}</option>
-          {Array.from(new Set(products.map(p => p.brand).filter(Boolean))).map((brand) => (
+          {filterOptions.brands.map((brand) => (
             <option key={brand} value={brand}>
               {brand}
             </option>
@@ -213,41 +274,49 @@ export default function ListPage() {
         </select>
       </div>
 
-      {/* Price Range Filter */}
       <div>
         <label className="block text-[16px] md:text-[18px] font-medium text-black mb-2">{t("priceRange")}</label>
         <div className="space-y-2">
           <input
             type="number"
             placeholder={t("minPrice")}
-            value={selectedPrice.min || ''}
-            onChange={(e) => setSelectedPrice(prev => ({ ...prev, min: e.target.value ? Number(e.target.value) : null }))}
+            value={priceDraft.min ?? ""}
+            onChange={(e) =>
+              setPriceDraft((prev) => ({
+                ...prev,
+                min: e.target.value ? Number(e.target.value) : null,
+              }))
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#438c71]/50 focus:border-[#438c71]"
           />
           <input
             type="number"
             placeholder={t("maxPrice")}
-            value={selectedPrice.max || ''}
-            onChange={(e) => setSelectedPrice(prev => ({ ...prev, max: e.target.value ? Number(e.target.value) : null }))}
+            value={priceDraft.max ?? ""}
+            onChange={(e) =>
+              setPriceDraft((prev) => ({
+                ...prev,
+                max: e.target.value ? Number(e.target.value) : null,
+              }))
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#438c71]/50 focus:border-[#438c71]"
           />
         </div>
       </div>
 
-      {/* Action Buttons */}
       <div className="space-y-3 pt-4">
         <Button
-          onClick={() => setIsMobileFilterOpen(false)}
+          onClick={applyPriceFilter}
           className="w-full bg-[#869dab] text-[16px] md:text-[18px] text-white font-medium py-2 px-4 rounded-xl transition-colors"
         >
-          ფილტრი
+          {t("filter")}
         </Button>
-        {(!searchParams.get("cat") && !searchParams.get("brand") && !searchParams.get("query")) && (
+        {hasActiveFilters && (
           <button
             onClick={clearFilters}
             className="w-full border border-[#2E3A47] text-[16px] md:text-[18px] text-[#2E3A47] font-medium py-2 px-4 rounded-xl transition-colors"
           >
-           გასუფთავება
+            {t("clearFilters")}
           </button>
         )}
       </div>
@@ -329,7 +398,7 @@ export default function ListPage() {
               </label>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                onChange={(e) => updateFilters({ sort: e.target.value === "newest" ? null : e.target.value })}
                 className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary/50"
               >
                 <option value="newest">{t("newest")}</option>
@@ -337,15 +406,9 @@ export default function ListPage() {
                 <option value="price-high">{t("priceHighToLow")}</option>
                 <option value="name">{t("nameAZ")}</option>
               </select>
-              {(searchParams.get("cat") ||
-                searchParams.get("brand") ||
-                searchParams.get("query")) && (
+              {hasActiveFilters && (
                   <Button
-                    onClick={() => {
-                      const url = new URL(window.location.href);
-                      url.search = "";
-                      window.location.href = url.toString();
-                    }}
+                    onClick={clearFilters}
                     className="bg-[#bbb272] text-white px-4 py-2 rounded-xl flex items-center gap-2"
                   >
                     <X className="w-4 h-4" />

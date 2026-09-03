@@ -154,7 +154,9 @@
     "brand": "ბრენდი",
     "priceRange": "ფასის დიაპაზონი",
     "allBrands": "ყველა ბრენდი",
-    "allCategories": "ყველა კატეგორია"
+    "allCategories": "ყველა კატეგორია",
+    "location": "მდებარეობა",
+    "allLocations": "ყველა ქალაქი"
   },
   "productDetail": {
     "breadcrumb": {

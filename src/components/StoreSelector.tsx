@@ -44,8 +44,18 @@ export default function StoreSelector() {
   const handleChange = (slug: string) => {
     setSelected(slug);
     writeStoreCookie(slug);
+    window.dispatchEvent(new Event("store-changed"));
     window.location.reload();
   };
+
+  useEffect(() => {
+    const syncFromCookie = () => {
+      const cookie = readStoreCookie();
+      setSelected((current) => (cookie === current ? current : cookie));
+    };
+    window.addEventListener("store-changed", syncFromCookie);
+    return () => window.removeEventListener("store-changed", syncFromCookie);
+  }, []);
 
   if (!stores.length) return null;
 
