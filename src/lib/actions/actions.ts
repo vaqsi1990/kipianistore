@@ -82,18 +82,32 @@ export async function deleteProduct(id: string) {
   }
 }
 
-export async function updateProduct(data: z.infer<typeof updateProductSchema> | Record<string, any>) {
+export async function updateProduct(
+  data: z.infer<typeof updateProductSchema> | Record<string, unknown>
+) {
   try {
-    const id = String(data.id || data.finaId || "");
+    const payload = data as {
+      id?: unknown;
+      finaId?: unknown;
+      images?: unknown;
+      title?: unknown;
+      titleEn?: unknown;
+      description?: unknown;
+      descriptionEn?: unknown;
+      brand?: unknown;
+    };
+    const id = String(payload.id || payload.finaId || "");
     if (!id) return { success: false, message: "Id is required" };
     return updateFinaProductOverride({
       finaId: id,
-      images: Array.isArray(data.images) ? data.images : [],
-      title: data.title,
-      titleEn: data.titleEn,
-      description: data.description || "",
-      descriptionEn: data.descriptionEn || "",
-      brand: data.brand || "",
+      images: Array.isArray(payload.images)
+        ? payload.images.filter((image): image is string => typeof image === "string")
+        : [],
+      title: String(payload.title || ""),
+      titleEn: String(payload.titleEn || ""),
+      description: String(payload.description || ""),
+      descriptionEn: String(payload.descriptionEn || ""),
+      brand: String(payload.brand || ""),
     });
   } catch (error) {
     console.error("Error in updateProduct:", error);

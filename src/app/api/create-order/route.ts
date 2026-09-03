@@ -6,7 +6,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { bogTokenManager } from "@/lib/bog-token";
 import { CartItem } from "@/lib/types";
 import { getCartForUser, validateDeliveryForCart } from "@/lib/cart-helpers";
-import { getFinaServerPrice } from "@/lib/fina-cart";
+import { buildFinaOrderItems } from "@/lib/fina-cart";
 import {
   extractBogOrderId,
   extractBogRedirectUrl,
@@ -18,13 +18,6 @@ function getBaseUrl() {
     process.env.NEXT_PUBLIC_APP_URL ||
     "https://www.kipianistore.ge"
   );
-}
-
-async function getServerPrice(
-  productId: string,
-  _size: string
-): Promise<{ price: number; title: string; image: string } | null> {
-  return getFinaServerPrice(productId);
 }
 
 export async function POST(req: NextRequest) {
@@ -72,49 +65,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const basket: {
-      quantity: number;
-      unit_price: number;
-      product_id: string;
-      description: string;
-    }[] = [];
-    const orderItems: {
-      productId: string;
-      qty: number;
-      price: number;
-      title: string;
-      image: string;
-    }[] = [];
-
-    for (const item of cartItems) {
-      const qty = parseInt(String(item.qty), 10);
-      if (isNaN(qty) || qty <= 0) {
-        return NextResponse.json({ error: "Invalid quantity" }, { status: 400 });
-      }
-
-      const productData = await getServerPrice(item.productId, item.size);
-      if (!productData || productData.price <= 0) {
-        return NextResponse.json(
-          { error: `Invalid product or price: ${item.productId}` },
-          { status: 400 }
-        );
-      }
-
-      basket.push({
-        quantity: qty,
-        unit_price: productData.price,
-        product_id: item.productId,
-        description: item.name || productData.title,
-      });
-
-      orderItems.push({
-        productId: item.productId,
-        qty,
-        price: productData.price,
-        title: item.name || productData.title,
-        image: item.image || productData.image,
-      });
+    let orderItems;
+    try {
+      orderItems = await buildFinaOrderItems(cartItems);
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : "Invalid FINA product in cart",
+        },
+        { status: 400 }
+      );
     }
+
+    const basket = orderItems.map((item) => ({
+      quantity: item.qty,
+      unit_price: item.price,
+      product_id: item.productId,
+      description: item.title,
+    }));
 
     const calculatedTotal = parseFloat(
       basket

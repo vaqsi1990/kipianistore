@@ -4,28 +4,15 @@ import { auth } from '../../../../../auth';
 import { prisma } from '@/lib/prisma';
 import { CartItem } from '@/lib/types';
 import { Prisma } from "@/generated/prisma/client";
-
-function calculateCartTotals(items: CartItem[]) {
-  const itemsPrice = items.reduce((total, item) => {
-    return total + (parseFloat(item.price) * item.qty);
-  }, 0);
-
-  // No shipping or tax calculation - just return the items price
-  return {
-    itemsPrice: parseFloat(itemsPrice.toFixed(2)),
-    totalPrice: parseFloat(itemsPrice.toFixed(2)),
-    shippingPrice: 0,
-    taxPrice: 0,
-  };
-}
+import { calculateFinaCartTotals, isSameCartLine } from '@/lib/fina-cart';
 
 export async function POST(request: NextRequest) {
   try {
     const { productId, size } = await request.json();
 
-    if (!productId || !size) {
+    if (!productId) {
       return NextResponse.json(
-        { error: 'Product ID and size are required' },
+        { error: 'Product ID is required' },
         { status: 400 }
       );
     }
@@ -58,10 +45,10 @@ export async function POST(request: NextRequest) {
 
     const existingItems = cart.items as CartItem[];
     const updatedItems = existingItems.filter(
-      item => !(item.productId === productId && item.size === size)
+      item => !isSameCartLine(item, { productId, size })
     );
 
-    const { itemsPrice, totalPrice, shippingPrice, taxPrice } = calculateCartTotals(updatedItems);
+    const { itemsPrice, totalPrice, shippingPrice, taxPrice } = calculateFinaCartTotals(updatedItems);
 
     const updatedCart = await prisma.cart.update({
       where: { id: cart.id },

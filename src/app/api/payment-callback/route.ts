@@ -117,6 +117,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (order.isPaid && isPaid) {
+      if (order.deliveryLocation) {
+        await decrementOrderStock(order.id, order.deliveryLocation);
+      }
       return new NextResponse("OK", { status: 200 });
     }
 

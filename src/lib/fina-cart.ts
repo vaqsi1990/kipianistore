@@ -9,6 +9,37 @@ import {
 } from "./fina";
 import { legacyFlagsFromSlugs } from "./store-utils";
 
+export function normalizeCartSize(size?: string | null) {
+  const value = (size || "").trim();
+  if (!value || /^N\/?A$/i.test(value) || value === "-") {
+    return "N/A";
+  }
+  return value;
+}
+
+export function isSameCartLine(
+  a: { productId: string; size?: string | null },
+  b: { productId: string; size?: string | null }
+) {
+  return (
+    String(a.productId) === String(b.productId) &&
+    normalizeCartSize(a.size) === normalizeCartSize(b.size)
+  );
+}
+
+export function calculateFinaCartTotals(items: CartItem[]) {
+  const itemsPrice = items.reduce((total, item) => {
+    return total + parseFloat(String(item.price)) * item.qty;
+  }, 0);
+
+  return {
+    itemsPrice: parseFloat(itemsPrice.toFixed(2)),
+    totalPrice: parseFloat(itemsPrice.toFixed(2)),
+    shippingPrice: 0,
+    taxPrice: 0,
+  };
+}
+
 export async function requireFinaProduct(productId: string) {
   const product = await getFinaProductById(productId);
   if (!product) {
@@ -28,13 +59,25 @@ export function finaProductToCartItem(
   return {
     productId: product.id,
     name: product.title,
-    size: size || "N/A",
+    size: normalizeCartSize(size),
     qty,
     image: product.images[0] || "/mattress.jpg",
     price: getFinaDiscountedPrice(product).toFixed(2),
     storeSlugs,
     ...flags,
   };
+}
+
+export async function refreshCartItemsFromFina(items: CartItem[]) {
+  const next: CartItem[] = [];
+  for (const item of items) {
+    const product = await getFinaProductById(item.productId);
+    if (!product) continue;
+    next.push(
+      finaProductToCartItem(product, item.size, Math.max(1, Number(item.qty) || 1))
+    );
+  }
+  return next;
 }
 
 export function assertFinaStock(

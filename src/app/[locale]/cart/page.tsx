@@ -49,23 +49,19 @@ const CartPage = () => {
           : item
       );
 
-      // Calculate new totals
       const itemsPrice = updatedItems.reduce(
         (sum, item) => sum + parseFloat(item.price) * item.qty,
         0
       );
-      const taxPrice = itemsPrice * 0.18; // 18% tax
-      const shippingPrice = itemsPrice > 100 ? 0 : 10; // Free shipping over 100
-      const totalPrice = itemsPrice + taxPrice + shippingPrice;
 
       // Update cart immediately
       updateCart({
         ...cart,
         items: updatedItems,
         itemsPrice: itemsPrice.toString(),
-        totalPrice: totalPrice.toString(),
-        shippingPrice: shippingPrice.toString(),
-        taxPrice: taxPrice.toString(),
+        totalPrice: itemsPrice.toString(),
+        shippingPrice: "0",
+        taxPrice: "0",
       });
     }
 
@@ -79,7 +75,8 @@ const CartPage = () => {
       });
 
       if (!response.ok) {
-        throw new Error("რაოდენობის განახლება ვერ მოხერხდა");
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "რაოდენობის განახლება ვერ მოხერხდა");
       }
 
       // Force refresh cart to ensure sync with server
@@ -87,7 +84,9 @@ const CartPage = () => {
       toast.success("კალათა განახლდა");
     } catch (error) {
       console.error("Error updating quantity:", error);
-      toast.error("რაოდენობის განახლება ვერ მოხერხდა");
+      toast.error(
+        error instanceof Error ? error.message : "რაოდენობის განახლება ვერ მოხერხდა"
+      );
 
       // Rollback to original state on error
       if (originalCart) {

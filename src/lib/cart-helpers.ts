@@ -9,11 +9,10 @@ import {
 } from "./store-utils";
 import { validateCartStockAtStore } from "./stock-utils";
 import {
-  getFinaProductById,
   getFinaStoreList,
   isKnownFinaStoreSlug,
 } from "./fina";
-import { finaProductToCartItem } from "./fina-cart";
+import { refreshCartItemsFromFina } from "./fina-cart";
 
 export async function getCartForUser(userId: string): Promise<Cart | null> {
   const cookieStore = await cookies();
@@ -39,14 +38,13 @@ export async function getCartForUser(userId: string): Promise<Cart | null> {
   return cart;
 }
 
-export async function enrichCartItem(item: CartItem): Promise<CartItem> {
-  const product = await getFinaProductById(item.productId);
-  if (!product) return item;
-  return finaProductToCartItem(product, item.size, item.qty);
+export async function enrichCartItem(item: CartItem): Promise<CartItem | null> {
+  const [product] = await refreshCartItemsFromFina([item]);
+  return product ?? null;
 }
 
 export async function enrichCartItems(items: CartItem[]): Promise<CartItem[]> {
-  return Promise.all(items.map((item) => enrichCartItem(item)));
+  return refreshCartItemsFromFina(items);
 }
 
 export async function validateDeliveryForCart(

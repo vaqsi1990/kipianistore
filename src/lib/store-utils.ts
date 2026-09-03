@@ -55,6 +55,7 @@ const SLUG_TO_BOOLEAN: Record<string, keyof LegacyStoreFlags> = {
   batumi44: "batumi44",
   qutaisi: "qutaisi",
   kobuleti: "kobuleti",
+  zugdidi: "zugdidi",
 };
 
 export type LegacyStoreFlags = {
@@ -63,6 +64,7 @@ export type LegacyStoreFlags = {
   batumi44: boolean;
   qutaisi: boolean;
   kobuleti: boolean;
+  zugdidi: boolean;
 };
 
 export type StoreInfo = {
@@ -81,6 +83,7 @@ export function emptyLegacyFlags(): LegacyStoreFlags {
     batumi44: false,
     qutaisi: false,
     kobuleti: false,
+    zugdidi: false,
   };
 }
 

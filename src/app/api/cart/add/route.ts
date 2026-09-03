@@ -5,28 +5,21 @@ import { prisma } from '@/lib/prisma';
 import { CartItem } from '@/lib/types';
 import { Prisma } from "@/generated/prisma/client";
 import { getFinaProductById } from '@/lib/fina';
-import { assertFinaStock, finaProductToCartItem } from '@/lib/fina-cart';
-
-function calculateCartTotals(items: CartItem[]) {
-  const itemsPrice = items.reduce((total, item) => {
-    return total + (parseFloat(item.price) * item.qty);
-  }, 0);
-
-  return {
-    itemsPrice: parseFloat(itemsPrice.toFixed(2)),
-    totalPrice: parseFloat(itemsPrice.toFixed(2)),
-    shippingPrice: 0,
-    taxPrice: 0,
-  };
-}
+import {
+  assertFinaStock,
+  calculateFinaCartTotals,
+  finaProductToCartItem,
+  isSameCartLine,
+  normalizeCartSize,
+} from '@/lib/fina-cart';
 
 export async function POST(request: NextRequest) {
   try {
     const { productId, size, quantity } = await request.json();
 
-    if (!productId || !size) {
+    if (!productId) {
       return NextResponse.json(
-        { error: 'Product ID and size are required' },
+        { error: 'Product ID is required' },
         { status: 400 }
       );
     }
@@ -86,9 +79,9 @@ export async function POST(request: NextRequest) {
     }
 
     const existingItems = cart.items as CartItem[];
-    const cartSize = size || "N/A";
+    const cartSize = normalizeCartSize(size);
     const existingItemIndex = existingItems.findIndex(
-      item => item.productId === productId && item.size === cartSize
+      item => isSameCartLine(item, { productId, size: cartSize })
     );
 
     let updatedItems: CartItem[];
@@ -103,14 +96,12 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-      updatedItems[existingItemIndex] = {
-        ...finaProductToCartItem(product, cartSize, nextQty),
-      };
+      updatedItems[existingItemIndex] = finaProductToCartItem(product, cartSize, nextQty);
     } else {
       updatedItems = [...existingItems, finaProductToCartItem(product, cartSize, qty)];
     }
 
-    const { itemsPrice, totalPrice, shippingPrice, taxPrice } = calculateCartTotals(updatedItems);
+    const { itemsPrice, totalPrice, shippingPrice, taxPrice } = calculateFinaCartTotals(updatedItems);
 
     const updatedCart = await prisma.cart.update({
       where: { id: cart.id },
@@ -148,7 +139,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error adding to cart:', error);
     return NextResponse.json(
-      { error: 'პროდუქტის კალათაში დამატება ვერ მოხერხდა' },
+      { error: error instanceof Error ? error.message : 'Failed to add to cart' },
       { status: 500 }
     );
   }

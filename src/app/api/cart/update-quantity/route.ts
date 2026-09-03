@@ -5,29 +5,20 @@ import { prisma } from '@/lib/prisma';
 import { CartItem } from '@/lib/types';
 import { Prisma } from "@/generated/prisma/client";
 import { getFinaProductById } from '@/lib/fina';
-import { assertFinaStock } from '@/lib/fina-cart';
-
-function calculateCartTotals(items: CartItem[]) {
-  const itemsPrice = items.reduce((total, item) => {
-    return total + (parseFloat(item.price) * item.qty);
-  }, 0);
-
-  // No shipping or tax calculation - just return the items price
-  return {
-    itemsPrice: parseFloat(itemsPrice.toFixed(2)),
-    totalPrice: parseFloat(itemsPrice.toFixed(2)),
-    shippingPrice: 0,
-    taxPrice: 0,
-  };
-}
+import {
+  assertFinaStock,
+  calculateFinaCartTotals,
+  isSameCartLine,
+  refreshCartItemsFromFina,
+} from '@/lib/fina-cart';
 
 export async function POST(request: NextRequest) {
   try {
     const { productId, size, quantity } = await request.json();
 
-    if (!productId || !size || quantity === undefined) {
+    if (!productId || quantity === undefined) {
       return NextResponse.json(
-        { error: 'Product ID, size, and quantity are required' },
+        { error: 'Product ID and quantity are required' },
         { status: 400 }
       );
     }
@@ -39,7 +30,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get session cart ID
     const cookieStore = await cookies();
     const sessionCartId = cookieStore.get('sessionCartId')?.value;
     
@@ -50,7 +40,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get session and user ID
     const session = await auth();
     const userId = session?.user?.id ? (session.user.id as string) : undefined;
 
@@ -67,32 +56,33 @@ export async function POST(request: NextRequest) {
 
     const existingItems = cart.items as CartItem[];
     const selectedStore = cookieStore.get('selectedStore')?.value;
-    const target = existingItems.find(
-      (item) => item.productId === productId && item.size === size
+    const target = existingItems.find((item) =>
+      isSameCartLine(item, { productId, size })
     );
-    if (target) {
-      const product = await getFinaProductById(productId);
-      if (!product) {
-        return NextResponse.json({ error: 'Product not found' }, { status: 404 });
-      }
-      try {
-        assertFinaStock(product, quantity, selectedStore);
-      } catch (error) {
-        return NextResponse.json(
-          { error: error instanceof Error ? error.message : 'Out of stock' },
-          { status: 400 }
-        );
-      }
+    if (!target) {
+      return NextResponse.json({ error: 'Item not found in cart' }, { status: 404 });
     }
 
-    const updatedItems = existingItems.map(item => {
-      if (item.productId === productId && item.size === size) {
-        return { ...item, qty: quantity };
-      }
-      return item;
-    });
+    const product = await getFinaProductById(productId);
+    if (!product) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+    try {
+      assertFinaStock(product, quantity, selectedStore);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Out of stock' },
+        { status: 400 }
+      );
+    }
 
-    const { itemsPrice, totalPrice, shippingPrice, taxPrice } = calculateCartTotals(updatedItems);
+    const updatedItems = await refreshCartItemsFromFina(
+      existingItems.map((item) =>
+        isSameCartLine(item, { productId, size }) ? { ...item, qty: quantity } : item
+      )
+    );
+
+    const { itemsPrice, totalPrice, shippingPrice, taxPrice } = calculateFinaCartTotals(updatedItems);
 
     const updatedCart = await prisma.cart.update({
       where: { id: cart.id },
@@ -119,8 +109,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error updating cart quantity:', error);
     return NextResponse.json(
-      { error: 'კალათის რაოდენობის განახლება ვერ მოხერხდა' },
+      { error: error instanceof Error ? error.message : 'Failed to update quantity' },
       { status: 500 }
     );
   }
-} 
+}

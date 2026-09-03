@@ -8,6 +8,7 @@ import {
   isBogPaymentSuccessful,
   mapBogStatusToPaymentStatus,
 } from "@/lib/bog-utils";
+import { decrementOrderStock } from "@/lib/stock-utils";
 
 export async function GET(
   req: NextRequest,
@@ -66,6 +67,11 @@ export async function GET(
       );
 
       if (!dbOrder.isPaid && isPaid) {
+        const current =
+          dbOrder.paymentResult && typeof dbOrder.paymentResult === "object"
+            ? (dbOrder.paymentResult as Record<string, unknown>)
+            : {};
+
         await prisma.order.update({
           where: { id: orderId },
           data: {
@@ -76,6 +82,7 @@ export async function GET(
               : dbOrder.bogOrderId,
             paymentStatus,
             paymentResult: {
+              ...current,
               bogOrderId: bogData.order_id,
               status: statusKey,
               transferAmount,
@@ -83,6 +90,10 @@ export async function GET(
             },
           },
         });
+
+        if (dbOrder.deliveryLocation) {
+          await decrementOrderStock(orderId, dbOrder.deliveryLocation);
+        }
 
         await prisma.cart.updateMany({
           where: { userId: dbOrder.userId },

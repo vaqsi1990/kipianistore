@@ -643,6 +643,73 @@ export function filterFinaCatalog(
   });
 }
 
+let resolvedCustomerId: number | null = null;
+
+function extractFinaRecords(payload: unknown): Array<Record<string, unknown>> {
+  if (Array.isArray(payload)) {
+    return payload.filter((row): row is Record<string, unknown> => !!row && typeof row === "object");
+  }
+  if (payload && typeof payload === "object") {
+    const record = payload as Record<string, unknown>;
+    for (const key of ["contragents", "customers", "data", "products"]) {
+      if (Array.isArray(record[key])) {
+        return record[key] as Array<Record<string, unknown>>;
+      }
+    }
+  }
+  return [];
+}
+
+function customerMatchesWebshop(row: Record<string, unknown>, code: string) {
+  const haystack = `${row.code || ""} ${row.name || ""} ${row.name_eng || ""}`.toLowerCase();
+  return (
+    String(row.code || "").toUpperCase() === code.toUpperCase() ||
+    /webshop|website|kipiani|online|ონლაინ/.test(haystack)
+  );
+}
+
+export async function resolveFinaCustomerId(): Promise<number> {
+  if (resolvedCustomerId) return resolvedCustomerId;
+
+  const fromEnv = Number(process.env.FINA_CUSTOMER_ID || 0);
+  if (fromEnv > 0) {
+    resolvedCustomerId = fromEnv;
+    return fromEnv;
+  }
+
+  const code = process.env.FINA_CUSTOMER_CODE || "WEBSHOP";
+
+  try {
+    const byCode = await finaGet<unknown>(
+      `/api/operation/getCustomersByCode/${encodeURIComponent(code)}`
+    );
+    const match = extractFinaRecords(byCode).find((row) => Number(row.id) > 0);
+    if (match) {
+      resolvedCustomerId = Number(match.id);
+      return resolvedCustomerId;
+    }
+  } catch (error) {
+    console.warn("FINA getCustomersByCode failed:", error);
+  }
+
+  const all = await finaGet<unknown>("/api/operation/getCustomers");
+  const customers = extractFinaRecords(all);
+  const preferred = customers.find((row) => customerMatchesWebshop(row, code));
+  const fallback = preferred || customers.find((row) => Number(row.id) > 0);
+
+  if (!fallback) {
+    throw new Error("Missing FINA_CUSTOMER_ID");
+  }
+
+  resolvedCustomerId = Number(fallback.id);
+  if (!preferred) {
+    console.warn(
+      `FINA_CUSTOMER_ID is not set; using customer ${resolvedCustomerId} (${fallback.code || fallback.name}) for website sales`
+    );
+  }
+  return resolvedCustomerId;
+}
+
 export async function saveFinaProductOut(params: {
   orderId: string;
   storeSlug: string;
@@ -655,12 +722,9 @@ export async function saveFinaProductOut(params: {
     throw new Error(`Unknown FINA store: ${params.storeSlug}`);
   }
 
-  const customer = Number(process.env.FINA_CUSTOMER_ID || 0);
+  const customer = await resolveFinaCustomerId();
   const user = Number(process.env.FINA_USER_ID || 1);
   const staff = Number(process.env.FINA_STAFF_ID || process.env.FINA_USER_ID || 1);
-  if (!customer) {
-    throw new Error("Missing FINA_CUSTOMER_ID");
-  }
 
   const products = params.items.map((item) => ({
     id: Number(item.productId),

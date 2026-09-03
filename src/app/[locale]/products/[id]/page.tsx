@@ -192,39 +192,38 @@ const Page = (props: { params: { id: string; locale: string } }) => {
       return;
     }
 
-    // For OTHERS products, no size selection needed
-    if (isOthersProduct()) {
-      if (!product.price) {
-        toast.error("Product price not available");
-        return;
-      }
-    } else {
-      // For sized products, size selection is required
-      if (!selectedSize) {
-        toast.error("Please select a size");
-        return;
-      }
+    if (!isOthersProduct() && !selectedSize) {
+      toast.error(
+        locale === "en" ? "Please select a size" : "გთხოვთ აირჩიოთ ზომა"
+      );
+      return;
     }
 
     const selectedSizeData = getSelectedSizeData();
-    const basePrice = getProductPrice();
     const finalPrice = getDiscountedPrice();
+    if (!finalPrice) {
+      toast.error(
+        locale === "en"
+          ? "Product price not available"
+          : "ფასი მიუწვდომელია"
+      );
+      return;
+    }
 
-    // Show toast immediately for better UX
-    toast.success("პროდუქტი დამატებულია კალათაში");
+    const cartSize = isOthersProduct()
+      ? "N/A"
+      : selectedSizeData?.size || "N/A";
 
-    // Optimistically update the cart UI
     const newItem: CartItem = {
       productId: product.id,
       name: getLocalizedTitle() || product.title || "Product",
-      size: isOthersProduct() ? "N/A" : selectedSizeData?.size || "",
+      size: cartSize,
       qty: 1,
       image: product.images[0],
       price: finalPrice.toFixed(2),
     };
 
     addToCartOptimistic(newItem);
-
     setAddingToCart(true);
     try {
       const response = await fetch("/api/cart/add", {
@@ -234,25 +233,35 @@ const Page = (props: { params: { id: string; locale: string } }) => {
         },
         body: JSON.stringify({
           productId: product.id,
-          size: isOthersProduct() ? "N/A" : selectedSizeData?.size || "",
+          size: cartSize,
           quantity: 1,
         }),
       });
 
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error("კალათაში დამატება ვერ მოხერხდა");
+        throw new Error(
+          data.error ||
+            (locale === "en"
+              ? "Could not add to cart"
+              : "კალათაში დამატება ვერ მოხერხდა")
+        );
       }
 
-      // Refresh cart to get the actual server state
-      await refreshCart();
-      
-      // Show success message
-      toast.success("პროდუქტი დაემატა კალათაში");
+      await refreshCart(true);
+      toast.success(
+        locale === "en" ? "Added to cart" : "პროდუქტი დაემატა კალათაში"
+      );
     } catch (error) {
       console.error("Error adding to cart:", error);
-      toast.error("კალათაში დამატება ვერ მოხერხდა");
-      // Refresh cart to revert optimistic update on error
-      await refreshCart();
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : locale === "en"
+            ? "Could not add to cart"
+            : "კალათაში დამატება ვერ მოხერხდა"
+      );
+      await refreshCart(true);
     } finally {
       setAddingToCart(false);
     }

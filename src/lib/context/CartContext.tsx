@@ -158,19 +158,15 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         updatedItems = [...cart.items, item];
       }
 
-      // Calculate new totals (simplified calculation)
       const itemsPrice = updatedItems.reduce((sum, item) => sum + (parseFloat(item.price) * item.qty), 0);
-      const taxPrice = itemsPrice * 0.18; // 18% tax
-      const shippingPrice = itemsPrice > 100 ? 0 : 10; // Free shipping over 100
-      const totalPrice = itemsPrice + taxPrice + shippingPrice;
 
       setCart({
         ...cart,
         items: updatedItems,
         itemsPrice: itemsPrice.toString(),
-        totalPrice: totalPrice.toString(),
-        shippingPrice: shippingPrice.toString(),
-        taxPrice: taxPrice.toString(),
+        totalPrice: itemsPrice.toString(),
+        shippingPrice: '0',
+        taxPrice: '0',
       });
     }
   }, [cart]);
@@ -187,19 +183,15 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       return;
     }
 
-    // Calculate new totals
     const itemsPrice = updatedItems.reduce((sum, item) => sum + (parseFloat(item.price) * item.qty), 0);
-    const taxPrice = itemsPrice * 0.18;
-    const shippingPrice = itemsPrice > 100 ? 0 : 10;
-    const totalPrice = itemsPrice + taxPrice + shippingPrice;
 
     setCart({
       ...cart,
       items: updatedItems,
       itemsPrice: itemsPrice.toString(),
-      totalPrice: totalPrice.toString(),
-      shippingPrice: shippingPrice.toString(),
-      taxPrice: taxPrice.toString(),
+      totalPrice: itemsPrice.toString(),
+      shippingPrice: '0',
+      taxPrice: '0',
     });
   }, [cart]);
 

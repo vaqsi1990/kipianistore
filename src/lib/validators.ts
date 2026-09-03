@@ -162,6 +162,7 @@ export const cartItemSchema = z.object({
   batumi44: z.boolean().optional(),
   qutaisi: z.boolean().optional(),
   kobuleti: z.boolean().optional(),
+  zugdidi: z.boolean().optional(),
 });
 
 export const insertCartSchema = z.object({

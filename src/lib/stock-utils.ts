@@ -39,6 +39,12 @@ export async function decrementOrderStock(
   });
   if (!order?.orderitems.length) return;
 
+  const existing =
+    order.paymentResult && typeof order.paymentResult === "object"
+      ? (order.paymentResult as Record<string, unknown>)
+      : {};
+  if (existing.finaDocId) return;
+
   try {
     const finaDocId = await saveFinaProductOut({
       orderId: order.id,
